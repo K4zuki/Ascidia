@@ -1,4 +1,4 @@
-"""    
+"""
 Copyright (c) 2012 Mark Frimston
 
 Permission is hereby granted, free of charge, to any person
@@ -77,22 +77,21 @@ import cairo
 from collections import defaultdict
 from collections import namedtuple
 
-import core
-import patterns
-
+from . import core
+from . import patterns
 
 NAMED_COLOURS = {
-    "red":      (0.75, 0.1, 0.1),
-    "orange":   (0.9, 0.3, 0),
-    "yellow":   (0.9, 0.9, 0.2),
-    "green":    (0.1, 0.75, 0.1),
-    "blue":     (0.1, 0.1, 0.75),
-    "purple":   (0.6, 0.1, 0.6),
-    "pink":     (0.75, 0.2, 0.4),
-    "black":    (0, 0, 0),
-    "white":    (1, 1, 1),
-    "gray":     (0.5, 0.5, 0.5),
-    "brown":    (0.5, 0.3, 0.1),
+    "red": (0.75, 0.1, 0.1),
+    "orange": (0.9, 0.3, 0),
+    "yellow": (0.9, 0.9, 0.2),
+    "green": (0.1, 0.75, 0.1),
+    "blue": (0.1, 0.1, 0.75),
+    "purple": (0.6, 0.1, 0.6),
+    "pink": (0.75, 0.2, 0.4),
+    "black": (0, 0, 0),
+    "white": (1, 1, 1),
+    "gray": (0.5, 0.5, 0.5),
+    "brown": (0.5, 0.3, 0.1),
 }
 
 
@@ -101,13 +100,12 @@ class OutputPrefs(object):
                  fgcolour=(0, 0, 0),
                  bgcolour=(1, 1, 1),
                  charheight=24):
-        for k, v in locals().items():
+        for k, v in list(locals().items()):
             if k != "self":
                 setattr(self, k, v)
 
 
 class PngOutput(object):
-
     EXTS = ("png",)
 
     STROKE_W = 2.5  # currently fixed
@@ -148,7 +146,7 @@ class PngOutput(object):
 
     def _do_Rectangle(self, rect):
         r = (self._x(rect.a[0]), self._y(rect.a[1]),
-             self._x(rect.b[0]-rect.a[0]), self._y(rect.b[1]-rect.a[1]))
+             self._x(rect.b[0] - rect.a[0]), self._y(rect.b[1] - rect.a[1]))
         if self._should_fill(rect):
             self.ctx.rectangle(*r)
             self._fill(rect)
@@ -159,27 +157,27 @@ class PngOutput(object):
     def _do_Ellipse(self, ellipse):
         w = self._x(ellipse.b[0] - ellipse.a[0])
         h = self._y(ellipse.b[1] - ellipse.a[1])
-        x = self._x(ellipse.a[0]) + w/2.0
-        y = self._y(ellipse.a[1]) + h/2.0
+        x = self._x(ellipse.a[0]) + w / 2.0
+        y = self._y(ellipse.a[1]) + h / 2.0
         if self._should_fill(ellipse):
-            self._arc_path(w, h, x, y, 0, 2*math.pi)
+            self._arc_path(w, h, x, y, 0, 2 * math.pi)
             self._fill(ellipse)
         if self._should_stroke(ellipse):
-            self._arc_path(w, h, x, y, 0, 2*math.pi)
+            self._arc_path(w, h, x, y, 0, 2 * math.pi)
             self._stroke(ellipse)
 
     def _arc_path(self, w, h, cx, cy, start, end):
         self.ctx.save()
         self.ctx.translate(cx, cy)
-        self.ctx.scale(w/2.0, h/2.0)
+        self.ctx.scale(w / 2.0, h / 2.0)
         self.ctx.arc(0, 0, 1.0, start, end)
         self.ctx.restore()
 
     def _do_Arc(self, arc):
         w = self._x(arc.b[0] - arc.a[0])
         h = self._y(arc.b[1] - arc.a[1])
-        x = self._x(arc.a[0]) + w/2.0
-        y = self._y(arc.a[1]) + h/2.0
+        x = self._x(arc.a[0]) + w / 2.0
+        y = self._y(arc.a[1]) + h / 2.0
         if self._should_fill(arc):
             self._arc_path(w, h, x, y, arc.start, arc.end)
             self._fill(arc)
@@ -188,10 +186,10 @@ class PngOutput(object):
             self._stroke(arc)
 
     def _do_QuadCurve(self, quad):
-        c1 = (self._x(quad.a[0]) + (self._x(quad.c[0]) - self._x(quad.a[0]))*(2.0/3.0),
-              self._y(quad.a[1]) + (self._y(quad.c[1]) - self._y(quad.a[1]))*(2.0/3.0))
-        c2 = (self._x(quad.b[0]) + (self._x(quad.c[0]) - self._x(quad.b[0]))*(2.0/3.0),
-              self._y(quad.b[1]) + (self._y(quad.c[1]) - self._y(quad.b[1]))*(2.0/3.0))
+        c1 = (self._x(quad.a[0]) + (self._x(quad.c[0]) - self._x(quad.a[0])) * (2.0 / 3.0),
+              self._y(quad.a[1]) + (self._y(quad.c[1]) - self._y(quad.a[1])) * (2.0 / 3.0))
+        c2 = (self._x(quad.b[0]) + (self._x(quad.c[0]) - self._x(quad.b[0])) * (2.0 / 3.0),
+              self._y(quad.b[1]) + (self._y(quad.c[1]) - self._y(quad.b[1])) * (2.0 / 3.0))
         if self._should_stroke(quad):
             self.ctx.move_to(self._x(quad.a[0]), self._y(quad.a[1]))
             self.ctx.curve_to(c1[0], c1[1], c2[0], c2[1], self._x(quad.b[0]), self._y(quad.b[1]))
@@ -213,9 +211,9 @@ class PngOutput(object):
 
     def _do_Text(self, text):
         self.ctx.select_font_face("monospace")
-        self.ctx.set_font_size(self.prefs.charheight*PngOutput.FONT_SIZE)
+        self.ctx.set_font_size(self.prefs.charheight * PngOutput.FONT_SIZE)
         self.ctx.set_source_rgba(*self._colour(text.colour, text.alpha))
-        self.ctx.move_to(self._x(text.pos[0]), self._y(text.pos[1]+PngOutput.TEXT_BASELINE))
+        self.ctx.move_to(self._x(text.pos[0]), self._y(text.pos[1] + PngOutput.TEXT_BASELINE))
         self.ctx.show_text(text.text)
         self.ctx.new_path()
 
@@ -235,7 +233,7 @@ class PngOutput(object):
         if not self._should_stroke(item):
             return
         self.ctx.set_source_rgba(*self._colour(item.stroke, item.salpha))
-        self.ctx.set_line_width(item.w*PngOutput.STROKE_W)
+        self.ctx.set_line_width(item.w * PngOutput.STROKE_W)
         self.ctx.set_dash(PngOutput.DASH_PATTERN if item.stype == core.STROKE_DASHED else [])
         self.ctx.stroke()
 
@@ -243,11 +241,11 @@ class PngOutput(object):
         if colour is None:
             return (0, 0, 0, 0)
         elif colour == core.C_FOREGROUND:
-            return tuple(list(self.prefs.fgcolour)+[alpha])
+            return tuple(list(self.prefs.fgcolour) + [alpha])
         elif colour == core.C_BACKGROUND:
-            return tuple(list(self.prefs.bgcolour)+[alpha])
+            return tuple(list(self.prefs.bgcolour) + [alpha])
         else:
-            return tuple(list(colour)+[alpha])
+            return tuple(list(colour) + [alpha])
 
     def _x(self, x):
         return int(x * self.prefs.charheight / core.CHAR_H_RATIO)
@@ -257,7 +255,6 @@ class PngOutput(object):
 
 
 class SvgOutput(object):
-
     EXTS = ("svg", "xml")
 
     STROKE_W = 2.5  # currently fixed
@@ -303,32 +300,32 @@ class SvgOutput(object):
         el = self.doc.createElement("rect")
         el.setAttribute("x", self._x(rect.a[0]))
         el.setAttribute("y", self._y(rect.a[1]))
-        el.setAttribute("width", self._x(rect.b[0]-rect.a[0]))
-        el.setAttribute("height", self._y(rect.b[1]-rect.a[1]))
+        el.setAttribute("width", self._x(rect.b[0] - rect.a[0]))
+        el.setAttribute("height", self._y(rect.b[1] - rect.a[1]))
         self._style_attrs(rect, el)
         parent.appendChild(el)
 
     def _do_Ellipse(self, ellipse, parent):
-        w = ellipse.b[0]-ellipse.a[0]
-        h = ellipse.b[1]-ellipse.a[1]
+        w = ellipse.b[0] - ellipse.a[0]
+        h = ellipse.b[1] - ellipse.a[1]
         el = self.doc.createElement("ellipse")
-        el.setAttribute("cx", self._x(ellipse.a[0]+w/2.0))
-        el.setAttribute("cy", self._y(ellipse.a[1]+h/2.0))
-        el.setAttribute("rx", self._x(w/2.0))
-        el.setAttribute("ry", self._y(h/2.0))
+        el.setAttribute("cx", self._x(ellipse.a[0] + w / 2.0))
+        el.setAttribute("cy", self._y(ellipse.a[1] + h / 2.0))
+        el.setAttribute("rx", self._x(w / 2.0))
+        el.setAttribute("ry", self._y(h / 2.0))
         self._style_attrs(ellipse, el)
         parent.appendChild(el)
 
     def _do_Arc(self, arc, parent):
-        rx = (arc.b[0]-arc.a[0])/2.0
-        ry = (arc.b[1]-arc.a[1])/2.0
-        cx, cy = arc.a[0]+rx, arc.a[1]+ry
-        astart = ((arc.start+math.pi) % (math.pi*2)) - math.pi
-        aend = ((arc.end + math.pi) % (math.pi*2)) - math.pi
-        sx = cx+math.cos(astart)*rx
-        sy = cy+math.sin(astart)*ry
-        ex = cx+math.cos(aend)*rx
-        ey = cy+math.sin(aend)*ry
+        rx = (arc.b[0] - arc.a[0]) / 2.0
+        ry = (arc.b[1] - arc.a[1]) / 2.0
+        cx, cy = arc.a[0] + rx, arc.a[1] + ry
+        astart = ((arc.start + math.pi) % (math.pi * 2)) - math.pi
+        aend = ((arc.end + math.pi) % (math.pi * 2)) - math.pi
+        sx = cx + math.cos(astart) * rx
+        sy = cy + math.sin(astart) * ry
+        ex = cx + math.cos(aend) * rx
+        ey = cy + math.sin(aend) * ry
         if astart <= aend:
             ang_diff = aend - astart
         else:
@@ -361,12 +358,12 @@ class SvgOutput(object):
     def _do_Text(self, text, parent):
         el = self.doc.createElement("text")
         el.setAttribute("x", self._x(text.pos[0]))
-        el.setAttribute("y", self._y(text.pos[1]+0.75))
+        el.setAttribute("y", self._y(text.pos[1] + 0.75))
         el.setAttribute("font-family", "monospace")
         el.appendChild(self.doc.createTextNode(text.text))
         el.setAttribute("fill", self._colour(text.colour))
         el.setAttribute("fill-opacity", self._alpha(text.alpha))
-        el.setAttribute("font-size", str(int(text.size*self.prefs.charheight*SvgOutput.FONT_SIZE)))
+        el.setAttribute("font-size", str(int(text.size * self.prefs.charheight * SvgOutput.FONT_SIZE)))
         parent.appendChild(el)
 
     def _colour(self, colour):
@@ -376,7 +373,7 @@ class SvgOutput(object):
             colour = self.prefs.fgcolour
         if colour == core.C_BACKGROUND:
             colour = self.prefs.bgcolour
-        return "rgb(%d,%d,%d)" % tuple([int(c*255) for c in colour])
+        return "rgb(%d,%d,%d)" % tuple([int(c * 255) for c in colour])
 
     def _x(self, x):
         return str(int(x * self.prefs.charheight / core.CHAR_H_RATIO))
@@ -408,7 +405,6 @@ class SvgOutput(object):
 
 
 class MatchLookup(object):
-
     _matches = None
     _occupants = None
     _match_meta = None
@@ -440,16 +436,16 @@ class MatchLookup(object):
             self._matches.remove(match)
         except ValueError:
             pass
-        for pos, meta in self._match_meta[match].items():
+        for pos, meta in list(self._match_meta[match].items()):
             if meta & core.M_OCCUPIED:
                 try:
                     self._occupants[pos].remove(match)
                 except ValueError:
                     pass
-        del(self._match_meta[match])
+        del (self._match_meta[match])
 
     def remove_cooccupants(self, match):
-        for pos, meta in self.get_meta_for(match).items():
+        for pos, meta in list(self.get_meta_for(match).items()):
             if meta & core.M_OCCUPIED:
                 for m in self.get_occupants_at(pos):
                     self.remove_match(m)
@@ -461,18 +457,17 @@ Diagram = namedtuple("Diagram", "size content")
 
 
 def process_diagram(text, patternlist, proglsnr=lambda x: None):
-
     lines = []
     lines.append([core.START_OF_INPUT])
-    lines.extend([l+"\n" for l in text.splitlines()])
+    lines.extend([l + "\n" for l in text.splitlines()])
     lines.append([core.END_OF_INPUT])
-    height = len(lines)-2
-    width = max([len(x) for x in lines])-1
+    height = len(lines) - 2
+    width = max([len(x) for x in lines]) - 1
 
     complete_matches = []
     complete_meta = {}
     for pnum, pclass in enumerate(patternlist):
-        proglsnr(float(pnum)/len(patternlist))
+        proglsnr(float(pnum) / len(patternlist))
         ongoing = MatchLookup()
         for j, line in enumerate(lines):
             j -= 1
@@ -489,7 +484,7 @@ def process_diagram(text, patternlist, proglsnr=lambda x: None):
                         ongoing.remove_match(match)
                     except StopIteration:
                         complete_matches.append(match)
-                        for p, m in ongoing.get_meta_for(match).items():
+                        for p, m in list(ongoing.get_meta_for(match).items()):
                             complete_meta[p] = complete_meta.get(p, core.M_NONE) | m
                         ongoing.remove_cooccupants(match)
                         ongoing.remove_match(match)

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
-import patterns
-from main import *
+from . import patterns
+from .main import *
 
 
 class FileOutContext(object):
@@ -82,7 +82,7 @@ def main():
     fmtbyname = {
         "png": PngOutput,
         "svg": SvgOutput}
-    fmtbyext = dict(sum([[(e, f) for e in f.EXTS] for f in fmtbyname.values()], []))
+    fmtbyext = dict(sum([[(e, f) for e in f.EXTS] for f in list(fmtbyname.values())], []))
     fmtdefault = PngOutput
 
     ap = argparse.ArgumentParser()
@@ -90,7 +90,7 @@ def main():
     ap.add_argument("-f", "--foreground", default="black", type=colour, help="foreground colour")
     ap.add_argument("-b", "--background", default="white", type=opt_colour, help="background colour")
     ap.add_argument("-c", "--charheight", default="24", type=int, help="character height in pixels")
-    ap.add_argument("-t", "--type", default=None, choices=fmtbyname.keys(), help="output format")
+    ap.add_argument("-t", "--type", default=None, choices=list(fmtbyname.keys()), help="output format")
     ap.add_argument("-q", "--quiet", action="store_true", help="no progress output")
     ap.add_argument("infile", default="-", nargs="?", help="input file")
     args = ap.parse_args()

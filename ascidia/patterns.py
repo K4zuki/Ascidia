@@ -28,7 +28,7 @@ Pattern classes go here
 """
 
 import math
-from core import *
+from .core import *
 
 TEXT_CHARS = ("".join([chr(x) for x in range(ord('0'), ord('9')+1)])
               + "".join([chr(x) for x in range(ord('A'), ord('Z')+1)])
