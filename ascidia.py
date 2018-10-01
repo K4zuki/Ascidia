@@ -1,11 +1,8 @@
-#!/usr/bin/env python2
-
 import patterns
 from main import *
 
 
 class FileOutContext(object):
-
     filename = None
     stream = None
     last_report_len = 0
@@ -21,7 +18,7 @@ class FileOutContext(object):
         self.stream.close()
 
     def report(self, message):
-        sys.stdout.write("\b"*self.last_report_len)
+        sys.stdout.write("\b" * self.last_report_len)
         sys.stdout.write(message)
         sys.stdout.flush()
         self.last_report_len = len(message)
@@ -68,7 +65,7 @@ def colour(s):
     if len(bits) != 3:
         raise ValueError(s)
     for b in bits:
-        if not(0 <= float(b) <= 1):
+        if not (0 <= float(b) <= 1):
             raise ValueError(s)
     return tuple(map(float, bits))
 
@@ -79,8 +76,7 @@ def opt_colour(s):
     return colour(s)
 
 
-if __name__ == "__main__":
-
+def main():
     fmtbyname = {
         "png": PngOutput,
         "svg": SvgOutput}
@@ -105,7 +101,7 @@ if __name__ == "__main__":
     if args.type is not None:
         format = fmtbyname[args.type]
     elif args.outfile not in (None, "-") and "." in args.outfile:
-        ext = args.outfile[args.outfile.rfind(".")+1:].lower()
+        ext = args.outfile[args.outfile.rfind(".") + 1:].lower()
         format = fmtbyext.get(ext, fmtdefault)
     else:
         format = fmtdefault
@@ -130,11 +126,13 @@ if __name__ == "__main__":
         input = instream.read()
 
     if not args.quiet:
-        def reporter(x): return outctx.report(
-            "[%s] %d%%" % ("#"*int(math.floor(x*10))+":"*int(math.ceil((1-x)*10)),
-                           int(x*100)))
+        def reporter(x):
+            return outctx.report(
+                "[%s] %d%%" % ("#" * int(math.floor(x * 10)) + ":" * int(math.ceil((1 - x) * 10)),
+                               int(x * 100)))
     else:
-        def reporter(x): return None
+        def reporter(x):
+            return None
 
     diagram = process_diagram(input, patterns.PATTERNS, reporter)
     if not args.quiet:
@@ -142,3 +140,7 @@ if __name__ == "__main__":
 
     with outctx as outstream:
         format.output(diagram, outstream, prefs)
+
+
+if __name__ == "__main__":
+    main()
