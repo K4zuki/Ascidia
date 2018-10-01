@@ -1,4 +1,4 @@
-"""    
+"""
 Copyright (c) 2012 Mark Frimston
 
 Permission is hereby granted, free of charge, to any person
@@ -23,20 +23,19 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 
 --------------------------------------------------
- 
+
 Pattern classes go here
 """
 
 import math
 from .core import *
 
-TEXT_CHARS = ("".join([chr(x) for x in range(ord('0'), ord('9')+1)])
-              + "".join([chr(x) for x in range(ord('A'), ord('Z')+1)])
-              + "".join([chr(x) for x in range(ord('a'), ord('z')+1)]))
+TEXT_CHARS = ("".join([chr(x) for x in range(ord('0'), ord('9') + 1)])
+              + "".join([chr(x) for x in range(ord('A'), ord('Z') + 1)])
+              + "".join([chr(x) for x in range(ord('a'), ord('z') + 1)]))
 
 
 class LiteralPattern(Pattern):
-
     pos = None
     char = None
 
@@ -44,7 +43,7 @@ class LiteralPattern(Pattern):
         self.curr = yield
         self.pos = self.curr.col, self.curr.row
         self.char = self.curr.char
-        if(not self.occupied() and not self.curr.char.isspace()
+        if (not self.occupied() and not self.curr.char.isspace()
                 and not self.curr.char in (START_OF_INPUT, END_OF_INPUT)):
             yield M_OCCUPIED
         else:
@@ -57,7 +56,6 @@ class LiteralPattern(Pattern):
 
 
 class DocumentBoxPattern(Pattern):
-
     tl = None
     br = None
     fold = False
@@ -74,11 +72,11 @@ class DocumentBoxPattern(Pattern):
         while self.curr.char == "-":
             self.curr = yield self.expect("-", M_OCCUPIED | M_BOX_START_S)
         if self.curr.char == "+":
-            w = self.curr.col-self.tl[0]+1
+            w = self.curr.col - self.tl[0] + 1
             self.fold = False
             self.curr = yield self.expect("+", M_OCCUPIED | M_BOX_START_S)
         else:
-            w = self.curr.col-self.tl[0]+1 + 2
+            w = self.curr.col - self.tl[0] + 1 + 2
             self.fold = True
             self.curr = yield self.expect(".", M_OCCUPIED | M_BOX_START_S)
         self.curr = yield M_BOX_AFTER_E
@@ -86,7 +84,7 @@ class DocumentBoxPattern(Pattern):
             self.curr = yield meta
         if self.fold:
             self.curr = yield self.expect("|", M_OCCUPIED | M_BOX_START_E)
-            for meta in self.await_pos(self.offset(w-4, 1, self.tl)):
+            for meta in self.await_pos(self.offset(w - 4, 1, self.tl)):
                 self.curr = yield meta
             self.curr = yield self.expect("|", M_OCCUPIED)
             self.curr = yield self.expect("_", M_OCCUPIED)
@@ -99,7 +97,7 @@ class DocumentBoxPattern(Pattern):
         while True:
             linestart = self.curr.col, self.curr.row
             self.curr = yield self.expect("|", M_OCCUPIED | M_BOX_START_E)
-            for meta in self.await_pos(self.offset(w-2, 0)):
+            for meta in self.await_pos(self.offset(w - 2, 0)):
                 self.curr = yield meta
             self.curr = yield self.expect("|", M_OCCUPIED)
             self.curr = yield M_BOX_AFTER_E
@@ -113,14 +111,14 @@ class DocumentBoxPattern(Pattern):
         if self.curr.char == "'" or not self.fold:
             self.wave = True
             self.curr = yield self.expect("'", M_OCCUPIED | M_BOX_START_E)
-            while self.curr.col < linestart[0]+w-2:
+            while self.curr.col < linestart[0] + w - 2:
                 self.curr = yield self.expect(".", M_OCCUPIED)
-                while self.curr.col < linestart[0]+w-4:
+                while self.curr.col < linestart[0] + w - 4:
                     self.curr = yield self.expect("_", M_OCCUPIED)
                     if self.curr.char == ".":
                         break
                 self.curr = yield self.expect(".", M_OCCUPIED)
-                while self.curr.col < linestart[0]+w-2:
+                while self.curr.col < linestart[0] + w - 2:
                     self.curr = yield self.expect("-", M_OCCUPIED)
                     if self.curr.char == ".":
                         break
@@ -131,7 +129,7 @@ class DocumentBoxPattern(Pattern):
         else:
             self.wave = False
             self.curr = yield self.expect("+", M_OCCUPIED | M_BOX_START_E)
-            for n in range(w-2):
+            for n in range(w - 2):
                 self.curr = yield self.expect("-", M_OCCUPIED)
             self.br = self.curr.col, self.curr.row
             self.curr = yield self.expect("+", M_OCCUPIED)
@@ -149,54 +147,53 @@ class DocumentBoxPattern(Pattern):
     def render(self):
         Pattern.render(self)
         return [
-            # left side
-            Line(a=(self.tl[0]+0.5, self.tl[1]+0.5), b=(self.tl[0]+0.5, self.br[1]+0.5),
-                 z=0, stroke=C_FOREGROUND, salpha=1.0, w=1, stype=STROKE_SOLID),
-        ] + ([
+                   # left side
+                   Line(a=(self.tl[0] + 0.5, self.tl[1] + 0.5), b=(self.tl[0] + 0.5, self.br[1] + 0.5),
+                        z=0, stroke=C_FOREGROUND, salpha=1.0, w=1, stype=STROKE_SOLID),
+               ] + ([
+                        # top side
+                        Line(a=(self.tl[0] + 0.5, self.tl[1] + 0.5), b=(self.br[0] - 2.0, self.tl[1] + 0.5),
+                             z=0, stroke=C_FOREGROUND, salpha=1.0, w=1, stype=STROKE_SOLID),
+                        # right side
+                        Line(a=(self.br[0] + 0.5, self.tl[1] + 2.0), b=(self.br[0] + 0.5, self.br[1] + 0.5),
+                             z=0, stroke=C_FOREGROUND, salpha=1.0, w=1, stype=STROKE_SOLID),
+                        # fold left side
+                        Line(a=(self.br[0] - 2.0, self.tl[1] + 0.5), b=(self.br[0] - 2.0, self.tl[1] + 2.0),
+                             z=0, stroke=C_FOREGROUND, salpha=1.0, w=1, stype=STROKE_SOLID),
+                        # fold bottom side
+                        Line(a=(self.br[0] - 2.0, self.tl[1] + 2.0), b=(self.br[0] + 0.5, self.tl[1] + 2.0),
+                             z=0, stroke=C_FOREGROUND, salpha=1.0, w=1, stype=STROKE_SOLID),
+                        # fold diagonal
+                        Line(a=(self.br[0] - 2.0, self.tl[1] + 0.5), b=(self.br[0] + 0.5, self.tl[1] + 2.0),
+                             z=0, stroke=C_FOREGROUND, salpha=1.0, w=1, stype=STROKE_SOLID),
+                    ] if self.fold else [
             # top side
-            Line(a=(self.tl[0]+0.5, self.tl[1]+0.5), b=(self.br[0]-2.0, self.tl[1]+0.5),
+            Line(a=(self.tl[0] + 0.5, self.tl[1] + 0.5), b=(self.br[0] + 0.5, self.tl[1] + 0.5),
                  z=0, stroke=C_FOREGROUND, salpha=1.0, w=1, stype=STROKE_SOLID),
             # right side
-            Line(a=(self.br[0]+0.5, self.tl[1]+2.0), b=(self.br[0]+0.5, self.br[1]+0.5),
-                 z=0, stroke=C_FOREGROUND, salpha=1.0, w=1, stype=STROKE_SOLID),
-            # fold left side
-            Line(a=(self.br[0]-2.0, self.tl[1]+0.5), b=(self.br[0]-2.0, self.tl[1]+2.0),
-                 z=0, stroke=C_FOREGROUND, salpha=1.0, w=1, stype=STROKE_SOLID),
-            # fold bottom side
-            Line(a=(self.br[0]-2.0, self.tl[1]+2.0), b=(self.br[0]+0.5, self.tl[1]+2.0),
-                 z=0, stroke=C_FOREGROUND, salpha=1.0, w=1, stype=STROKE_SOLID),
-            # fold diagonal
-            Line(a=(self.br[0]-2.0, self.tl[1]+0.5), b=(self.br[0]+0.5, self.tl[1]+2.0),
-                 z=0, stroke=C_FOREGROUND, salpha=1.0, w=1, stype=STROKE_SOLID),
-        ] if self.fold else [
-            # top side
-            Line(a=(self.tl[0]+0.5, self.tl[1]+0.5), b=(self.br[0]+0.5, self.tl[1]+0.5),
-                 z=0, stroke=C_FOREGROUND, salpha=1.0, w=1, stype=STROKE_SOLID),
-            # right side
-            Line(a=(self.br[0]+0.5, self.tl[1]+0.5), b=(self.br[0]+0.5, self.br[1]+0.5),
+            Line(a=(self.br[0] + 0.5, self.tl[1] + 0.5), b=(self.br[0] + 0.5, self.br[1] + 0.5),
                  z=0, stroke=C_FOREGROUND, salpha=1.0, w=1, stype=STROKE_SOLID),
         ]) + ([
-            # trough curve
-            QuadCurve(a=(self.tl[0]+0.5, self.br[1]+0.5),
-                      b=(self.tl[0]+0.5+float(self.br[0]-self.tl[0])/2, self.br[1]+0.5),
-                      c=(self.tl[0]+0.5+float(self.br[0]-self.tl[0])/4, self.br[1]+1.0),
-                      z=0, stroke=C_FOREGROUND, salpha=1.0, w=1,
-                      stype=STROKE_SOLID),
-            # peak curve
-            QuadCurve(a=(self.tl[0]+0.5+float(self.br[0]-self.tl[0])/2, self.br[1]+0.5),
-                      b=(self.br[0]+0.5, self.br[1]+0.5),
-                      c=(self.tl[0]+0.5+float(self.br[0]-self.tl[0])/4*3, self.br[1]+0.0),
-                      z=0, stroke=C_FOREGROUND, salpha=1.0, w=1,
-                      stype=STROKE_SOLID),
-        ] if self.wave else [
+                  # trough curve
+                  QuadCurve(a=(self.tl[0] + 0.5, self.br[1] + 0.5),
+                            b=(self.tl[0] + 0.5 + float(self.br[0] - self.tl[0]) / 2, self.br[1] + 0.5),
+                            c=(self.tl[0] + 0.5 + float(self.br[0] - self.tl[0]) / 4, self.br[1] + 1.0),
+                            z=0, stroke=C_FOREGROUND, salpha=1.0, w=1,
+                            stype=STROKE_SOLID),
+                  # peak curve
+                  QuadCurve(a=(self.tl[0] + 0.5 + float(self.br[0] - self.tl[0]) / 2, self.br[1] + 0.5),
+                            b=(self.br[0] + 0.5, self.br[1] + 0.5),
+                            c=(self.tl[0] + 0.5 + float(self.br[0] - self.tl[0]) / 4 * 3, self.br[1] + 0.0),
+                            z=0, stroke=C_FOREGROUND, salpha=1.0, w=1,
+                            stype=STROKE_SOLID),
+              ] if self.wave else [
             # bottom side
-            Line(a=(self.tl[0]+0.5, self.br[1]+0.5), b=(self.br[0]+0.5, self.br[1]+0.5),
+            Line(a=(self.tl[0] + 0.5, self.br[1] + 0.5), b=(self.br[0] + 0.5, self.br[1] + 0.5),
                  z=0, stroke=C_FOREGROUND, salpha=1.0, w=1, stype=STROKE_SOLID),
         ])
 
 
 class DbCylinderPattern(Pattern):
-
     tl = None
     br = None
 
@@ -208,13 +205,13 @@ class DbCylinderPattern(Pattern):
         self.curr = yield self.expect("-", M_OCCUPIED | M_BOX_START_S)
         while self.curr.char != ".":
             self.curr = yield self.expect("-", M_OCCUPIED | M_BOX_START_S)
-        w = self.curr.col-self.tl[0]+1
+        w = self.curr.col - self.tl[0] + 1
         self.curr = yield self.expect(".", M_OCCUPIED | M_BOX_START_S)
         self.curr = yield M_BOX_AFTER_E
         for meta in self.await_pos(self.offset(0, 1, self.tl)):
             self.curr = yield meta
         self.curr = yield self.expect("'", M_OCCUPIED | M_BOX_START_E)
-        for n in range(w-2):
+        for n in range(w - 2):
             self.curr = yield self.expect("-", M_OCCUPIED)
         self.curr = yield self.expect("'", M_OCCUPIED)
         self.curr = yield M_BOX_AFTER_E
@@ -223,7 +220,7 @@ class DbCylinderPattern(Pattern):
         while True:
             linestart = self.curr.col, self.curr.row
             self.curr = yield self.expect("|", M_OCCUPIED | M_BOX_START_E)
-            for meta in self.await_pos(self.offset(w-2, 0)):
+            for meta in self.await_pos(self.offset(w - 2, 0)):
                 self.curr = yield meta
             self.curr = yield self.expect("|", M_OCCUPIED)
             self.curr = yield M_BOX_AFTER_E
@@ -233,7 +230,7 @@ class DbCylinderPattern(Pattern):
                 break
         linestart = self.curr.col, self.curr.row
         self.curr = yield self.expect("'", M_OCCUPIED | M_BOX_START_E)
-        for n in range(w-2):
+        for n in range(w - 2):
             self.curr = yield self.expect("-", M_OCCUPIED)
         self.br = (self.curr.col, self.curr.row)
         self.curr = yield self.expect("'", M_OCCUPIED)
@@ -251,19 +248,18 @@ class DbCylinderPattern(Pattern):
     def render(self):
         Pattern.render(self)
         return [
-            Ellipse(a=(self.tl[0]+0.5, self.tl[1]+0.5), b=(self.br[0]+0.5, self.tl[1]+1.0+0.5),
+            Ellipse(a=(self.tl[0] + 0.5, self.tl[1] + 0.5), b=(self.br[0] + 0.5, self.tl[1] + 1.0 + 0.5),
                     z=0, stroke=C_FOREGROUND, salpha=1.0, w=1, stype=STROKE_SOLID, fill=None, falpha=0.0),
-            Line(a=(self.tl[0]+0.5, self.tl[1]+1.0), b=(self.tl[0]+0.5, self.br[1]),
+            Line(a=(self.tl[0] + 0.5, self.tl[1] + 1.0), b=(self.tl[0] + 0.5, self.br[1]),
                  z=0, stroke=C_FOREGROUND, salpha=1.0, w=1, stype=STROKE_SOLID),
-            Line(a=(self.br[0]+0.5, self.tl[1]+1.0), b=(self.br[0]+0.5, self.br[1]),
+            Line(a=(self.br[0] + 0.5, self.tl[1] + 1.0), b=(self.br[0] + 0.5, self.br[1]),
                  z=0, stroke=C_FOREGROUND, salpha=1.0, w=1, stype=STROKE_SOLID),
-            Arc(a=(self.tl[0]+0.5, self.br[1]-1.0+0.5), b=(self.br[0]+0.5, self.br[1]+0.5),
+            Arc(a=(self.tl[0] + 0.5, self.br[1] - 1.0 + 0.5), b=(self.br[0] + 0.5, self.br[1] + 0.5),
                 z=0, start=0.0, end=math.pi, stroke=C_FOREGROUND, salpha=1.0,
                 w=1, stype=STROKE_SOLID, fill=None, falpha=0.0)]
 
 
 class RectangularBoxPattern(Pattern):
-
     cnrchars = None
     tl = None
     br = None
@@ -296,7 +292,7 @@ class RectangularBoxPattern(Pattern):
                 self.curr = yield self.expect(" ", meta=M_OCCUPIED | M_BOX_START_S)
             else:
                 self.curr = yield self.expect("-", meta=M_OCCUPIED | M_BOX_START_S)
-        w = self.curr.col-self.tl[0]+1
+        w = self.curr.col - self.tl[0] + 1
 
         # top right corner
         self.curr = yield self.expect(self.cnrchars[cnrtype][1], meta=M_OCCUPIED | M_BOX_START_S)
@@ -311,9 +307,9 @@ class RectangularBoxPattern(Pattern):
         self.curr = yield self.expect(";" if self.dashed else "|", meta=M_OCCUPIED | M_BOX_START_E)
 
         # first content line content
-        for n in range(w-2):
-            if(not self.occupied() and self.curr.char == "|"
-                    and self.curr.col-lastvs > 1):
+        for n in range(w - 2):
+            if (not self.occupied() and self.curr.char == "|"
+                    and self.curr.col - lastvs > 1):
                 self.vs.append(self.curr.col)
                 lastvs = self.curr.col
                 self.curr = yield M_OCCUPIED
@@ -338,19 +334,19 @@ class RectangularBoxPattern(Pattern):
             self.curr = yield self.expect(";" if self.dashed else "|", meta=M_OCCUPIED | M_BOX_START_E)
 
             # content
-            if(not self.occupied() and self.curr.char == "-"
-                    and self.curr.row-lasths > 1):
+            if (not self.occupied() and self.curr.char == "-"
+                    and self.curr.row - lasths > 1):
                 # horizontal separator
                 self.hs.append(self.curr.row)
                 lasths = self.curr.row
-                for n in range(w-2):
+                for n in range(w - 2):
                     if self.curr.col in self.vs:
                         self.curr = yield self.expect("-|", meta=M_OCCUPIED)
                     else:
                         self.curr = yield self.expect("-", meta=M_OCCUPIED)
             else:
                 # non-separator
-                for n in range(w-2):
+                for n in range(w - 2):
                     if self.curr.col in self.vs:
                         self.curr = yield self.expect("|", meta=M_OCCUPIED)
                     else:
@@ -372,11 +368,11 @@ class RectangularBoxPattern(Pattern):
 
         # bottom line
         if self.dashed:
-            for n in range((w-2)/2):
+            for n in range((w - 2) // 2):
                 self.curr = yield self.expect("-", meta=M_OCCUPIED)
                 self.curr = yield self.expect(" ", meta=M_OCCUPIED)
         else:
-            for n in range(w-2):
+            for n in range(w - 2):
                 self.curr = yield self.expect("-", meta=M_OCCUPIED)
 
         # bottom right corner
@@ -403,41 +399,45 @@ class RectangularBoxPattern(Pattern):
 
 
 class RoundedRectangularBoxPattern(RectangularBoxPattern):
-
     cnrchars = [[".", ".", "'", "'"], ["/", "\\", "\\", "/"]]
 
     def render(self):
         Pattern.render(self)
         return [
-            Line(a=(self.tl[0]+0.5+1.0, self.tl[1]+0.5), b=(self.br[0]+0.5-1.0, self.tl[1]+0.5),
+            Line(a=(self.tl[0] + 0.5 + 1.0, self.tl[1] + 0.5), b=(self.br[0] + 0.5 - 1.0, self.tl[1] + 0.5),
                  z=0, stroke=C_FOREGROUND, salpha=1.0, w=1,
                  stype=STROKE_DASHED if self.dashed else STROKE_SOLID),
-            Line(a=(self.tl[0]+0.5, self.tl[1]+0.5+1.0/CHAR_H_RATIO), b=(self.tl[0]+0.5, self.br[1]+0.5-1.0/CHAR_H_RATIO),
+            Line(a=(self.tl[0] + 0.5, self.tl[1] + 0.5 + 1.0 / CHAR_H_RATIO),
+                 b=(self.tl[0] + 0.5, self.br[1] + 0.5 - 1.0 / CHAR_H_RATIO),
                  z=0, stroke=C_FOREGROUND, salpha=1.0, w=1,
                  stype=STROKE_DASHED if self.dashed else STROKE_SOLID),
-            Line(a=(self.br[0]+0.5, self.tl[1]+0.5+1.0/CHAR_H_RATIO), b=(self.br[0]+0.5, self.br[1]+0.5-1.0/CHAR_H_RATIO),
+            Line(a=(self.br[0] + 0.5, self.tl[1] + 0.5 + 1.0 / CHAR_H_RATIO),
+                 b=(self.br[0] + 0.5, self.br[1] + 0.5 - 1.0 / CHAR_H_RATIO),
                  z=0, stroke=C_FOREGROUND, salpha=1.0, w=1,
                  stype=STROKE_DASHED if self.dashed else STROKE_SOLID),
-            Line(a=(self.tl[0]+0.5+1.0, self.br[1]+0.5), b=(self.br[0]+0.5-1.0, self.br[1]+0.5),
+            Line(a=(self.tl[0] + 0.5 + 1.0, self.br[1] + 0.5), b=(self.br[0] + 0.5 - 1.0, self.br[1] + 0.5),
                  z=0, stroke=C_FOREGROUND, salpha=1.0, w=1,
                  stype=STROKE_DASHED if self.dashed else STROKE_SOLID),
-            Arc(a=(self.tl[0]+0.5, self.tl[1]+0.5), b=(self.tl[0]+0.5+2.0, self.tl[1]+0.5+2.0/CHAR_H_RATIO),
-                z=0, start=math.pi, end=math.pi*1.5, stroke=C_FOREGROUND, salpha=1.0, w=1,
+            Arc(a=(self.tl[0] + 0.5, self.tl[1] + 0.5),
+                b=(self.tl[0] + 0.5 + 2.0, self.tl[1] + 0.5 + 2.0 / CHAR_H_RATIO),
+                z=0, start=math.pi, end=math.pi * 1.5, stroke=C_FOREGROUND, salpha=1.0, w=1,
                 stype=STROKE_DASHED if self.dashed else STROKE_SOLID, fill=None, falpha=1.0),
-            Arc(a=(self.br[0]+0.5-2.0, self.tl[1]+0.5), b=(self.br[0]+0.5, self.tl[1]+0.5+2.0/CHAR_H_RATIO),
-                z=0, start=math.pi*-0.5, end=0, stroke=C_FOREGROUND, salpha=1.0, w=1,
+            Arc(a=(self.br[0] + 0.5 - 2.0, self.tl[1] + 0.5),
+                b=(self.br[0] + 0.5, self.tl[1] + 0.5 + 2.0 / CHAR_H_RATIO),
+                z=0, start=math.pi * -0.5, end=0, stroke=C_FOREGROUND, salpha=1.0, w=1,
                 stype=STROKE_DASHED if self.dashed else STROKE_SOLID, fill=None, falpha=1.0),
-            Arc(a=(self.br[0]+0.5-2.0, self.br[1]+0.5-2.0/CHAR_H_RATIO), b=(self.br[0]+0.5, self.br[1]+0.5),
-                z=0, start=0, end=math.pi*0.5, stroke=C_FOREGROUND, salpha=1.0, w=1,
+            Arc(a=(self.br[0] + 0.5 - 2.0, self.br[1] + 0.5 - 2.0 / CHAR_H_RATIO),
+                b=(self.br[0] + 0.5, self.br[1] + 0.5),
+                z=0, start=0, end=math.pi * 0.5, stroke=C_FOREGROUND, salpha=1.0, w=1,
                 stype=STROKE_DASHED if self.dashed else STROKE_SOLID, fill=None, falpha=1.0),
-            Arc(a=(self.tl[0]+0.5, self.br[1]+0.5-2.0/CHAR_H_RATIO), b=(self.tl[0]+0.5+2.0, self.br[1]+0.5),
-                z=0, start=math.pi*0.5, end=math.pi, stroke=C_FOREGROUND, salpha=1.0, w=1,
+            Arc(a=(self.tl[0] + 0.5, self.br[1] + 0.5 - 2.0 / CHAR_H_RATIO),
+                b=(self.tl[0] + 0.5 + 2.0, self.br[1] + 0.5),
+                z=0, start=math.pi * 0.5, end=math.pi, stroke=C_FOREGROUND, salpha=1.0, w=1,
                 stype=STROKE_DASHED if self.dashed else STROKE_SOLID, fill=None, falpha=1.0), ]
 
 
 class StraightRectangularBoxPattern(RectangularBoxPattern):
-
-    cnrchars = [["+"]*4]
+    cnrchars = [["+"] * 4]
 
     def render(self):
         Pattern.render(self)
@@ -451,20 +451,19 @@ class StraightRectangularBoxPattern(RectangularBoxPattern):
                 fills = [[0.25], [0.0]]
             secboundx = [self.tl[0]] + self.vs + [self.br[0]]
             secboundy = [self.tl[1]] + self.hs + [self.br[1]]
-            for j in range(len(self.hs)+1):
-                for i in range(len(self.vs)+1):
+            for j in range(len(self.hs) + 1):
+                for i in range(len(self.vs) + 1):
                     falpha = fills[j % 2][i % 2]
-                    retval.append(Rectangle(a=(secboundx[i]+0.5, secboundy[j]+0.5),
-                                            b=(secboundx[i+1]+0.5, secboundy[j+1]+0.5), z=-0.5, stroke=None,
+                    retval.append(Rectangle(a=(secboundx[i] + 0.5, secboundy[j] + 0.5),
+                                            b=(secboundx[i + 1] + 0.5, secboundy[j + 1] + 0.5), z=-0.5, stroke=None,
                                             salpha=0.0, w=1, stype=STROKE_SOLID, fill=C_FOREGROUND, falpha=falpha))
-        retval.append(Rectangle(a=(self.tl[0]+0.5, self.tl[1]+0.5),
-                                b=(self.br[0]+0.5, self.br[1]+0.5), z=0, stroke=C_FOREGROUND, salpha=1.0,
+        retval.append(Rectangle(a=(self.tl[0] + 0.5, self.tl[1] + 0.5),
+                                b=(self.br[0] + 0.5, self.br[1] + 0.5), z=0, stroke=C_FOREGROUND, salpha=1.0,
                                 w=1, stype=STROKE_DASHED if self.dashed else STROKE_SOLID, fill=None, falpha=1.0))
         return retval
 
 
 class ParagmBoxPattern(Pattern):
-
     tl = None
     br = None
     dashed = False
@@ -486,7 +485,7 @@ class ParagmBoxPattern(Pattern):
         self.curr = yield self.expect("-", meta=M_OCCUPIED | M_BOX_START_S)
         while self.curr.char != "+":
             self.curr = yield self.expect("-", meta=M_OCCUPIED | M_BOX_START_S)
-        w = self.curr.col-self.tl[0]+1
+        w = self.curr.col - self.tl[0] + 1
 
         # top right corner
         self.curr = yield self.expect("+", meta=M_OCCUPIED | M_BOX_START_S)
@@ -502,7 +501,7 @@ class ParagmBoxPattern(Pattern):
             self.curr = yield self.expect("/", meta=M_OCCUPIED | M_BOX_START_E)
 
             # content
-            for meta in self.await_pos(self.offset(w-1, 0, rowstart)):
+            for meta in self.await_pos(self.offset(w - 1, 0, rowstart)):
                 self.curr = yield meta
 
             # right side
@@ -521,7 +520,7 @@ class ParagmBoxPattern(Pattern):
         self.curr = yield self.expect("+", meta=M_OCCUPIED | M_BOX_START_E)
 
         # bottom line
-        for n in range(w-2):
+        for n in range(w - 2):
             self.curr = yield self.expect("-", meta=M_OCCUPIED)
 
         # bottom right corner
@@ -549,21 +548,20 @@ class ParagmBoxPattern(Pattern):
     def render(self):
         Pattern.render(self)
         h = self.br[1] - self.tl[1]
-        w = self.br[0]+(h-1) - self.tl[0]
+        w = self.br[0] + (h - 1) - self.tl[0]
         return [
-            Line(a=(self.tl[0]+0.5, self.tl[1]+0.5), b=(self.tl[0]+w+1+0.5, self.tl[1]+0.5),
+            Line(a=(self.tl[0] + 0.5, self.tl[1] + 0.5), b=(self.tl[0] + w + 1 + 0.5, self.tl[1] + 0.5),
                  z=0, stroke=C_FOREGROUND, salpha=1.0, w=1, stype=STROKE_SOLID),
-            Line(a=(self.tl[0]+0.5, self.tl[1]+0.5), b=(self.br[0]-w-1+0.5, self.br[1]+0.5),
+            Line(a=(self.tl[0] + 0.5, self.tl[1] + 0.5), b=(self.br[0] - w - 1 + 0.5, self.br[1] + 0.5),
                  z=0, stroke=C_FOREGROUND, salpha=1.0, w=1, stype=STROKE_SOLID),
-            Line(a=(self.br[0]-w-1+0.5, self.br[1]+0.5), b=(self.br[0]+0.5, self.br[1]+0.5),
+            Line(a=(self.br[0] - w - 1 + 0.5, self.br[1] + 0.5), b=(self.br[0] + 0.5, self.br[1] + 0.5),
                  z=0, stroke=C_FOREGROUND, salpha=1.0, w=1, stype=STROKE_SOLID),
-            Line(a=(self.tl[0]+w+1+0.5, self.tl[1]+0.5), b=(self.br[0]+0.5, self.br[1]+0.5),
+            Line(a=(self.tl[0] + w + 1 + 0.5, self.tl[1] + 0.5), b=(self.br[0] + 0.5, self.br[1] + 0.5),
                  z=0, stroke=C_FOREGROUND, salpha=1.0, w=1, stype=STROKE_SOLID),
         ]
 
 
 class EllipticalBoxPattern(Pattern):
-
     tl = None
     br = None
 
@@ -583,8 +581,8 @@ class EllipticalBoxPattern(Pattern):
                 break
         self.curr = yield self.expect(".", meta=M_BOX_START_S | M_OCCUPIED)
         self.curr = yield M_BOX_AFTER_E
-        rowwidth = i+4
-        rowstart = rowstart[0]-1, rowstart[1]+1
+        rowwidth = i + 4
+        rowstart = rowstart[0] - 1, rowstart[1] + 1
         for meta in self.await_pos(rowstart):
             self.curr = yield meta
 
@@ -592,28 +590,28 @@ class EllipticalBoxPattern(Pattern):
             if self.curr.char != "/":
                 break
             self.curr = yield self.expect("/", meta=M_OCCUPIED | M_BOX_START_E | M_BOX_START_S)
-            for meta in self.await_pos(self.offset(rowwidth-1, 0, rowstart)):
+            for meta in self.await_pos(self.offset(rowwidth - 1, 0, rowstart)):
                 self.curr = yield meta
             self.curr = yield self.expect("\\", meta=M_OCCUPIED | M_BOX_START_S)
             self.curr = yield M_BOX_AFTER_E
             slashrows += 1
             rowwidth += 2
-            rowstart = rowstart[0]-1, rowstart[1]+1
+            rowstart = rowstart[0] - 1, rowstart[1] + 1
             for meta in self.await_pos(rowstart):
                 self.curr = yield meta
 
         self.tl = self.curr.col, self.tl[1]
-        self.br = self.curr.col+(rowwidth-1), 0
+        self.br = self.curr.col + (rowwidth - 1), 0
         first = True
         while True:
             self.curr = yield self.expect("|", meta=M_BOX_START_E | M_OCCUPIED
-                                          | (M_BOX_START_S if first else M_NONE))
-            for meta in self.await_pos(self.offset(rowwidth-1, 0, rowstart)):
+                                                    | (M_BOX_START_S if first else M_NONE))
+            for meta in self.await_pos(self.offset(rowwidth - 1, 0, rowstart)):
                 self.curr = yield meta
             self.curr = yield self.expect("|", meta=M_OCCUPIED
-                                          | (M_BOX_START_S if first else M_NONE))
+                                                    | (M_BOX_START_S if first else M_NONE))
             self.curr = yield M_BOX_AFTER_E
-            rowstart = rowstart[0], rowstart[1]+1
+            rowstart = rowstart[0], rowstart[1] + 1
             for meta in self.await_pos(rowstart):
                 self.curr = yield meta
             if self.curr.char != "|":
@@ -621,31 +619,31 @@ class EllipticalBoxPattern(Pattern):
             first = False
 
         rowwidth -= 2
-        rowstart = rowstart[0]+1, rowstart[1]
+        rowstart = rowstart[0] + 1, rowstart[1]
 
         while slashrows > 0:
             self.curr = yield M_BOX_AFTER_S
             self.curr = yield self.expect("\\", meta=M_OCCUPIED | M_BOX_START_E)
-            for meta in self.await_pos(self.offset(rowwidth-1, 0, rowstart)):
+            for meta in self.await_pos(self.offset(rowwidth - 1, 0, rowstart)):
                 self.curr = yield meta
             self.curr = yield self.expect("/", meta=M_OCCUPIED)
             self.curr = yield M_BOX_AFTER_E | M_BOX_AFTER_S
             slashrows -= 1
             rowwidth -= 2
-            rowstart = rowstart[0]+1, rowstart[1]+1
+            rowstart = rowstart[0] + 1, rowstart[1] + 1
             for meta in self.await_pos(self.offset(-1, 0, rowstart)):
                 self.curr = yield meta
 
         self.curr = yield M_BOX_AFTER_S
         self.curr = yield self.expect("'", meta=M_BOX_START_E | M_OCCUPIED)
-        for i in range(rowwidth-2):
+        for i in range(rowwidth - 2):
             self.curr = yield self.expect("-", meta=M_OCCUPIED)
         self.curr = yield self.expect("'", meta=M_OCCUPIED)
         self.br = self.br[0], self.curr.row
         self.curr = yield M_BOX_AFTER_E | M_BOX_AFTER_S
 
         try:
-            rowstart = rowstart[0], rowstart[1]+1
+            rowstart = rowstart[0], rowstart[1] + 1
             for i in range(rowwidth):
                 for meta in self.await_pos(self.offset(i, 0, rowstart)):
                     self.curr = yield meta
@@ -657,13 +655,12 @@ class EllipticalBoxPattern(Pattern):
     def render(self):
         Pattern.render(self)
         return [Ellipse(
-            a=(self.tl[0]+0.5, self.tl[1]+0.5), b=(self.br[0]+0.5, self.br[1]+0.5),
+            a=(self.tl[0] + 0.5, self.tl[1] + 0.5), b=(self.br[0] + 0.5, self.br[1] + 0.5),
             z=1, stroke=C_FOREGROUND, salpha=1.0, w=1, stype=STROKE_SOLID,
             fill=None, falpha=1.0)]
 
 
 class LineSqCornerPattern(Pattern):
-
     pos = None
     ends = None
 
@@ -674,18 +671,18 @@ class LineSqCornerPattern(Pattern):
         self.pos = self.curr.col, self.curr.row
         self.ends = []
         for m, dm, x, y in [
-                (M_LINE_AFTER_E, M_DASH_AFTER_E, -1, 0),
-                (M_LINE_AFTER_S, M_DASH_AFTER_S, 0, -1),
-                (M_LINE_AFTER_SE, M_DASH_AFTER_SE, -1, -1),
-                (M_LINE_AFTER_SW, M_DASH_AFTER_SW, 1, -1)]:
+            (M_LINE_AFTER_E, M_DASH_AFTER_E, -1, 0),
+            (M_LINE_AFTER_S, M_DASH_AFTER_S, 0, -1),
+            (M_LINE_AFTER_SE, M_DASH_AFTER_SE, -1, -1),
+            (M_LINE_AFTER_SW, M_DASH_AFTER_SW, 1, -1)]:
             if self.curr.meta & m:
                 self.ends.append((x, y, bool(self.curr.meta & dm)))
         self.curr = yield self.expect("+")
         for m, dm, x, y in [
-                (M_LINE_START_E, M_DASH_START_E, 1, 0),
-                (M_LINE_START_SW, M_DASH_START_SW, -1, 1),
-                (M_LINE_START_S, M_DASH_START_S, 0, 1),
-                (M_LINE_START_SE, M_DASH_START_SE, 1, 1)]:
+            (M_LINE_START_E, M_DASH_START_E, 1, 0),
+            (M_LINE_START_SW, M_DASH_START_SW, -1, 1),
+            (M_LINE_START_S, M_DASH_START_S, 0, 1),
+            (M_LINE_START_SE, M_DASH_START_SE, 1, 1)]:
             try:
                 for meta in self.await_pos(self.offset(x, y, self.pos)):
                     self.curr = yield meta
@@ -699,17 +696,16 @@ class LineSqCornerPattern(Pattern):
 
     def render(self):
         Pattern.render(self)
-        centre = self.pos[0]+0.5, self.pos[1]+0.5
+        centre = self.pos[0] + 0.5, self.pos[1] + 0.5
         retval = []
         for x, y, dsh in self.ends:
-            retval.append(Line(a=centre, b=(centre[0]+x*0.5, centre[1]+y*0.5),
+            retval.append(Line(a=centre, b=(centre[0] + x * 0.5, centre[1] + y * 0.5),
                                z=0, stroke=C_FOREGROUND, salpha=1.0, w=1,
                                stype=STROKE_DASHED if dsh else STROKE_SOLID))
         return retval
 
 
 class LineRdCornerPattern(Pattern):
-
     pos = None
     ends = None
 
@@ -733,10 +729,10 @@ class LineRdCornerPattern(Pattern):
 
         self.ends = []
         for m, dm, x, y in [
-                (M_LINE_AFTER_E, M_DASH_AFTER_E, -1, 0),
-                (M_LINE_AFTER_SW, M_DASH_AFTER_SW, 1, -1),
-                (M_LINE_AFTER_S, M_DASH_AFTER_S,  0, -1),
-                (M_LINE_AFTER_SE, M_DASH_AFTER_SE, -1, -1)]:
+            (M_LINE_AFTER_E, M_DASH_AFTER_E, -1, 0),
+            (M_LINE_AFTER_SW, M_DASH_AFTER_SW, 1, -1),
+            (M_LINE_AFTER_S, M_DASH_AFTER_S, 0, -1),
+            (M_LINE_AFTER_SE, M_DASH_AFTER_SE, -1, -1)]:
             if y < 0 and not up:
                 continue
             if self.curr.meta & m:
@@ -745,10 +741,10 @@ class LineRdCornerPattern(Pattern):
         self.curr = yield M_OCCUPIED
 
         for m, dm, x, y in [
-                (M_LINE_START_E, M_DASH_START_E,  1, 0),
-                (M_LINE_START_SW, M_DASH_START_SW, -1, 1),
-                (M_LINE_START_S, M_DASH_START_S,  0, 1),
-                (M_LINE_START_SE, M_DASH_START_SE, 1, 1), ]:
+            (M_LINE_START_E, M_DASH_START_E, 1, 0),
+            (M_LINE_START_SW, M_DASH_START_SW, -1, 1),
+            (M_LINE_START_S, M_DASH_START_S, 0, 1),
+            (M_LINE_START_SE, M_DASH_START_SE, 1, 1), ]:
             try:
                 if y > 0 and not down:
                     continue
@@ -765,15 +761,15 @@ class LineRdCornerPattern(Pattern):
 
     def render(self):
         Pattern.render(self)
-        centre = self.pos[0]+0.5, self.pos[1]+0.5
+        centre = self.pos[0] + 0.5, self.pos[1] + 0.5
         retval = []
         rest = self.ends[:]
         while len(rest) > 0:
             end = rest[0]
             rest = rest[1:]
             for oth in rest:
-                a = centre[0]+end[0]*0.5, centre[1]+end[1]*0.5
-                b = centre[0]+oth[0]*0.5, centre[1]+oth[1]*0.5
+                a = centre[0] + end[0] * 0.5, centre[1] + end[1] * 0.5
+                b = centre[0] + oth[0] * 0.5, centre[1] + oth[1] * 0.5
                 retval.append(QuadCurve(a=a, b=b, c=centre, z=0, stroke=C_FOREGROUND,
                                         salpha=1.0, w=1,
                                         stype=STROKE_DASHED if end[2] and oth[2] else STROKE_SOLID))
@@ -781,7 +777,6 @@ class LineRdCornerPattern(Pattern):
 
 
 class ShortLinePattern(Pattern):
-
     xdir = 0
     ydir = 0
     char = None
@@ -818,15 +813,14 @@ class ShortLinePattern(Pattern):
 
     def render(self):
         Pattern.render(self)
-        return [Line(a=(self.pos[0]+0.5+self.xdir*-0.5+self.xdir*int(self.frombox)*-0.5,
-                        self.pos[1]+0.5+self.ydir*-0.5+self.ydir*int(self.frombox)*-0.5),
-                     b=(self.pos[0]+0.5+self.xdir*0.5+self.xdir*int(self.tobox)*0.5,
-                         self.pos[1]+0.5+self.ydir*0.5+self.ydir*int(self.tobox)*0.5),
+        return [Line(a=(self.pos[0] + 0.5 + self.xdir * -0.5 + self.xdir * int(self.frombox) * -0.5,
+                        self.pos[1] + 0.5 + self.ydir * -0.5 + self.ydir * int(self.frombox) * -0.5),
+                     b=(self.pos[0] + 0.5 + self.xdir * 0.5 + self.xdir * int(self.tobox) * 0.5,
+                        self.pos[1] + 0.5 + self.ydir * 0.5 + self.ydir * int(self.tobox) * 0.5),
                      z=0, stroke=C_FOREGROUND, salpha=1.0, w=1, stype=self.stroketype)]
 
 
 class LongLinePattern(Pattern):
-
     xdir = 0
     ydir = 0
     startchars = None
@@ -886,15 +880,14 @@ class LongLinePattern(Pattern):
 
     def render(self):
         Pattern.render(self)
-        return [Line(a=(self.startpos[0]+0.5+self.xdir*-0.5+self.xdir*int(self.frombox)*-0.5,
-                        self.startpos[1]+0.5+self.ydir*-0.5+self.ydir*int(self.frombox)*-0.5),
-                     b=(self.endpos[0]+0.5+self.xdir*0.5+self.xdir*int(self.tobox)*0.5,
-                         self.endpos[1]+0.5+self.ydir*0.5+self.ydir*int(self.tobox)*0.5),
+        return [Line(a=(self.startpos[0] + 0.5 + self.xdir * -0.5 + self.xdir * int(self.frombox) * -0.5,
+                        self.startpos[1] + 0.5 + self.ydir * -0.5 + self.ydir * int(self.frombox) * -0.5),
+                     b=(self.endpos[0] + 0.5 + self.xdir * 0.5 + self.xdir * int(self.tobox) * 0.5,
+                        self.endpos[1] + 0.5 + self.ydir * 0.5 + self.ydir * int(self.tobox) * 0.5),
                      z=0, stroke=C_FOREGROUND, salpha=1.0, w=1, stype=self.stroketype)]
 
 
 class ShortUpDiagLinePattern(ShortLinePattern):
-
     xdir = -1
     ydir = 1
     char = "/"
@@ -906,7 +899,6 @@ class ShortUpDiagLinePattern(ShortLinePattern):
 
 
 class LongUpDiagLinePattern(LongLinePattern):
-
     xdir = -1
     ydir = 1
     startchars = ["/"]
@@ -919,7 +911,6 @@ class LongUpDiagLinePattern(LongLinePattern):
 
 
 class ShortUpDiagDashedLinePattern(ShortLinePattern):
-
     xdir = -1
     ydir = 1
     char = ","
@@ -931,7 +922,6 @@ class ShortUpDiagDashedLinePattern(ShortLinePattern):
 
 
 class LongUpDiagDashedLinePattern(LongLinePattern):
-
     xdir = -1
     ydir = 1
     startchars = [","]
@@ -944,7 +934,6 @@ class LongUpDiagDashedLinePattern(LongLinePattern):
 
 
 class ShortDownDiagLinePattern(ShortLinePattern):
-
     xdir = 1
     ydir = 1
     char = "\\"
@@ -956,7 +945,6 @@ class ShortDownDiagLinePattern(ShortLinePattern):
 
 
 class LongDownDiagLinePattern(LongLinePattern):
-
     xdir = 1
     ydir = 1
     startchars = ["\\"]
@@ -969,7 +957,6 @@ class LongDownDiagLinePattern(LongLinePattern):
 
 
 class ShortDownDiagDashedLinePattern(ShortLinePattern):
-
     xdir = 1
     ydir = 1
     char = "`"
@@ -981,7 +968,6 @@ class ShortDownDiagDashedLinePattern(ShortLinePattern):
 
 
 class LongDownDiagDashedLinePattern(LongLinePattern):
-
     xdir = 1
     ydir = 1
     startchars = ["`"]
@@ -994,7 +980,6 @@ class LongDownDiagDashedLinePattern(LongLinePattern):
 
 
 class ShortVertLinePattern(ShortLinePattern):
-
     xdir = 0
     ydir = 1
     char = "|"
@@ -1006,7 +991,6 @@ class ShortVertLinePattern(ShortLinePattern):
 
 
 class LongVertLinePattern(LongLinePattern):
-
     xdir = 0
     ydir = 1
     startchars = ["|"]
@@ -1019,7 +1003,6 @@ class LongVertLinePattern(LongLinePattern):
 
 
 class ShortVertDashedLinePattern(ShortLinePattern):
-
     xdir = 0
     ydir = 1
     char = ";"
@@ -1031,7 +1014,6 @@ class ShortVertDashedLinePattern(ShortLinePattern):
 
 
 class LongVertDashedLinePattern(LongLinePattern):
-
     xdir = 0
     ydir = 1
     startchars = [";"]
@@ -1044,7 +1026,6 @@ class LongVertDashedLinePattern(LongLinePattern):
 
 
 class LongHorizLinePattern(LongLinePattern):
-
     xdir = 1
     ydir = 0
     startchars = ["-"]
@@ -1057,7 +1038,6 @@ class LongHorizLinePattern(LongLinePattern):
 
 
 class ShortHorizLinePattern(ShortLinePattern):
-
     xdir = 1
     ydir = 0
     char = "-"
@@ -1069,7 +1049,6 @@ class ShortHorizLinePattern(ShortLinePattern):
 
 
 class LongHorizDashedLinePattern(LongLinePattern):
-
     xdir = 1
     ydir = 0
     startchars = ["-", " ", "-", " "]
@@ -1082,7 +1061,6 @@ class LongHorizDashedLinePattern(LongLinePattern):
 
 
 class TinyCirclePattern(Pattern):
-
     pos = None
 
     def matcher(self):
@@ -1098,13 +1076,12 @@ class TinyCirclePattern(Pattern):
 
     def render(self):
         Pattern.render(self)
-        return [Ellipse(a=(self.pos[0]+0.5-0.4, self.pos[1]+0.5-0.4/CHAR_H_RATIO),
-                        b=(self.pos[0]+0.5+0.4, self.pos[1]+0.5+0.4/CHAR_H_RATIO), z=1,
+        return [Ellipse(a=(self.pos[0] + 0.5 - 0.4, self.pos[1] + 0.5 - 0.4 / CHAR_H_RATIO),
+                        b=(self.pos[0] + 0.5 + 0.4, self.pos[1] + 0.5 + 0.4 / CHAR_H_RATIO), z=1,
                         stroke="magenta", salpha=1.0, w=1, stype=STROKE_SOLID, fill=None, falpha=0.0)]
 
 
 class SmallCirclePattern(Pattern):
-
     left = None
     right = None
     y = None
@@ -1126,14 +1103,13 @@ class SmallCirclePattern(Pattern):
 
     def render(self):
         Pattern.render(self)
-        d = self.right-self.left
-        return [Ellipse(a=(self.left+0.5, self.y+0.5-d/2.0/CHAR_H_RATIO),
-                        b=(self.right+0.5, self.y+0.5+d/2.0/CHAR_H_RATIO), z=1, stroke="green",
+        d = self.right - self.left
+        return [Ellipse(a=(self.left + 0.5, self.y + 0.5 - d / 2.0 / CHAR_H_RATIO),
+                        b=(self.right + 0.5, self.y + 0.5 + d / 2.0 / CHAR_H_RATIO), z=1, stroke="green",
                         salpha=1.0, w=1, stype=STROKE_SOLID, fill=None, falpha=0.0)]
 
 
 class JumpPattern(Pattern):
-
     pos = None
     hdash = False
     vdash = False
@@ -1141,8 +1117,8 @@ class JumpPattern(Pattern):
 
     def matcher(self):
         self.curr = yield
-        ndash, edash, sdash, wdash = [False]*4
-        if(self.curr.char != self.char or self.occupied()
+        ndash, edash, sdash, wdash = [False] * 4
+        if (self.curr.char != self.char or self.occupied()
                 or not self.curr.meta & M_LINE_AFTER_E
                 or not self.curr.meta & M_LINE_AFTER_S):
             self.reject()
@@ -1170,52 +1146,48 @@ class JumpPattern(Pattern):
 
 
 class LJumpPattern(JumpPattern):
-
     char = "("
 
     def render(self):
         JumpPattern.render(self)
         return [
-            Line(a=(self.pos[0], self.pos[1]+0.5), b=(self.pos[0]+1.0, self.pos[1]+0.5),
+            Line(a=(self.pos[0], self.pos[1] + 0.5), b=(self.pos[0] + 1.0, self.pos[1] + 0.5),
                  z=0, stroke=C_FOREGROUND, salpha=1.0, w=1,
                  stype=STROKE_DASHED if self.hdash else STROKE_SOLID),
-            Arc(a=(self.pos[0]+0.5-0.6, self.pos[1]), b=(self.pos[0]+0.5+0.6, self.pos[1]+1.0),
-                z=0, start=math.pi*0.5, end=math.pi*1.5, stroke=C_FOREGROUND, salpha=1.0, w=1,
+            Arc(a=(self.pos[0] + 0.5 - 0.6, self.pos[1]), b=(self.pos[0] + 0.5 + 0.6, self.pos[1] + 1.0),
+                z=0, start=math.pi * 0.5, end=math.pi * 1.5, stroke=C_FOREGROUND, salpha=1.0, w=1,
                 stype=STROKE_DASHED if self.vdash else STROKE_SOLID, fill=None, falpha=0.0), ]
 
 
 class RJumpPattern(JumpPattern):
-
     char = ")"
 
     def render(self):
         JumpPattern.render(self)
         return [
-            Line(a=(self.pos[0], self.pos[1]+0.5), b=(self.pos[0]+1.0, self.pos[1]+0.5),
+            Line(a=(self.pos[0], self.pos[1] + 0.5), b=(self.pos[0] + 1.0, self.pos[1] + 0.5),
                  z=0, stroke=C_FOREGROUND, salpha=1.0, w=1,
                  stype=STROKE_DASHED if self.hdash else STROKE_SOLID),
-            Arc(a=(self.pos[0]+0.5-0.6, self.pos[1]), b=(self.pos[0]+0.5+0.6, self.pos[1]+1.0),
-                z=0, start=math.pi*-0.5, end=math.pi*0.5, stroke=C_FOREGROUND, salpha=1.0,
+            Arc(a=(self.pos[0] + 0.5 - 0.6, self.pos[1]), b=(self.pos[0] + 0.5 + 0.6, self.pos[1] + 1.0),
+                z=0, start=math.pi * -0.5, end=math.pi * 0.5, stroke=C_FOREGROUND, salpha=1.0,
                 w=1, stype=STROKE_DASHED if self.vdash else STROKE_SOLID, fill=None, falpha=0.0), ]
 
 
 class UJumpPattern(JumpPattern):
-
     char = "^"
 
     def render(self):
         JumpPattern.render(self)
         return [
-            Line(a=(self.pos[0]+0.5, self.pos[1]), b=(self.pos[0]+0.5, self.pos[1]+1.0),
+            Line(a=(self.pos[0] + 0.5, self.pos[1]), b=(self.pos[0] + 0.5, self.pos[1] + 1.0),
                  z=0, stroke=C_FOREGROUND, salpha=1.0, w=1,
                  stype=STROKE_DASHED if self.vdash else STROKE_SOLID),
-            Arc(a=(self.pos[0], self.pos[1]+0.5-0.4), b=(self.pos[0]+1.0, self.pos[1]+0.5+0.4),
-                z=0, start=math.pi, end=math.pi*2, stroke=C_FOREGROUND, salpha=1.0, w=1,
+            Arc(a=(self.pos[0], self.pos[1] + 0.5 - 0.4), b=(self.pos[0] + 1.0, self.pos[1] + 0.5 + 0.4),
+                z=0, start=math.pi, end=math.pi * 2, stroke=C_FOREGROUND, salpha=1.0, w=1,
                 stype=STROKE_DASHED if self.hdash else STROKE_SOLID, fill=None, falpha=0.0), ]
 
 
 class StickManPattern(Pattern):
-
     pos = None
 
     def matcher(self):
@@ -1237,7 +1209,7 @@ class StickManPattern(Pattern):
     def render(self):
         Pattern.render(self)
         return [
-            Ellipse(a=self.offset(0, 1-1.0/CHAR_H_RATIO, self.pos), b=self.offset(1, 1, self.pos),
+            Ellipse(a=self.offset(0, 1 - 1.0 / CHAR_H_RATIO, self.pos), b=self.offset(1, 1, self.pos),
                     z=0, stroke=C_FOREGROUND, salpha=1.0, w=1, stype=STROKE_SOLID, fill=None, falpha=0.0),
             Line(a=self.offset(0.5, 1, self.pos), b=self.offset(0.5, 1.8, self.pos), z=0,
                  stroke=C_FOREGROUND, salpha=1.0, w=1, stype=STROKE_SOLID),
@@ -1250,7 +1222,6 @@ class StickManPattern(Pattern):
 
 
 class DiamondBoxPattern(Pattern):
-
     top = None
     width = None
 
@@ -1271,7 +1242,7 @@ class DiamondBoxPattern(Pattern):
         count = 1
         while True:
             try:
-                for meta in self.await_pos(self.offset(-count*2-int(apeak), count, self.top)):
+                for meta in self.await_pos(self.offset(-count * 2 - int(apeak), count, self.top)):
                     self.curr = yield meta
                 if self.occupied() or self.curr.char != ".":
                     self.curr = yield M_NONE
@@ -1280,7 +1251,7 @@ class DiamondBoxPattern(Pattern):
                 break
             self.curr = yield self.expect(".", meta=M_OCCUPIED | M_BOX_START_E | M_BOX_START_S)
             self.curr = yield self.expect("'", meta=M_OCCUPIED | M_BOX_START_S)
-            for meta in self.await_pos(self.offset((count-1)*2+1+int(apeak), count, self.top)):
+            for meta in self.await_pos(self.offset((count - 1) * 2 + 1 + int(apeak), count, self.top)):
                 self.curr = yield meta
             self.curr = yield self.expect("'", meta=M_OCCUPIED | M_BOX_START_S)
             self.curr = yield self.expect(".", meta=M_OCCUPIED | M_BOX_START_S)
@@ -1288,11 +1259,11 @@ class DiamondBoxPattern(Pattern):
             count += 1
 
         # middle
-        for meta in self.await_pos(self.offset(-count*2-int(apeak)+1, count, self.top)):
+        for meta in self.await_pos(self.offset(-count * 2 - int(apeak) + 1, count, self.top)):
             self.curr = yield meta
-        self.width = 4*(count-1) + 3 + 2*int(apeak)
+        self.width = 4 * (count - 1) + 3 + 2 * int(apeak)
         self.curr = yield self.expect("<", meta=M_OCCUPIED | M_BOX_START_S | M_BOX_START_E)
-        for meta in self.await_pos(self.offset((count-1)*2+1+int(apeak), count, self.top)):
+        for meta in self.await_pos(self.offset((count - 1) * 2 + 1 + int(apeak), count, self.top)):
             self.curr = yield meta
         self.curr = yield self.expect(">", meta=M_OCCUPIED | M_BOX_START_S)
         self.curr = yield M_BOX_AFTER_E
@@ -1301,26 +1272,28 @@ class DiamondBoxPattern(Pattern):
         size = count
         for count in range(1, size):
             if count > 1:
-                for meta in self.await_pos(self.offset(-(size-count)*2-int(apeak)-2, size+count, self.top)):
+                for meta in self.await_pos(self.offset(-(size - count) * 2 - int(apeak) - 2, size + count, self.top)):
                     self.curr = yield meta
                 self.curr = yield M_BOX_AFTER_S
-            for meta in self.await_pos(self.offset(-(size-count)*2-int(apeak)-1, size+count, self.top)):
+            for meta in self.await_pos(self.offset(-(size - count) * 2 - int(apeak) - 1, size + count, self.top)):
                 self.curr = yield meta
             self.curr = yield M_BOX_AFTER_S
-            for meta in self.await_pos(self.offset(-(size-count)*2-int(apeak), size+count, self.top)):
+            for meta in self.await_pos(self.offset(-(size - count) * 2 - int(apeak), size + count, self.top)):
                 self.curr = yield meta
             self.curr = yield self.expect("'", meta=M_OCCUPIED | M_BOX_START_E)
             self.curr = yield self.expect(".", meta=M_OCCUPIED)
-            for meta in self.await_pos(self.offset((size-count-1)*2+1+int(apeak), size+count, self.top)):
+            for meta in self.await_pos(self.offset((size - count - 1) * 2 + 1 + int(apeak), size + count, self.top)):
                 self.curr = yield meta
             self.curr = yield self.expect(".", meta=M_OCCUPIED)
             self.curr = yield self.expect("'", meta=M_OCCUPIED)
-            for meta in self.await_pos(self.offset((size-count-1)*2+1+int(apeak)+2, size+count, self.top)):
+            for meta in self.await_pos(
+                    self.offset((size - count - 1) * 2 + 1 + int(apeak) + 2, size + count, self.top)):
                 self.curr = yield meta
             self.curr = yield M_BOX_AFTER_E | M_BOX_AFTER_S
             if count > 1:
                 try:
-                    for meta in self.await_pos(self.offset((size-count-1)*2+1+int(apeak)+3, size+count, self.top)):
+                    for meta in self.await_pos(
+                            self.offset((size - count - 1) * 2 + 1 + int(apeak) + 3, size + count, self.top)):
                         self.curr = yield meta
                     self.curr = yield M_BOX_AFTER_S
                 except NoSuchPosition:
@@ -1329,24 +1302,24 @@ class DiamondBoxPattern(Pattern):
 
         # bottom peak
         if count > 1:
-            for meta in self.await_pos(self.offset(-int(apeak)-2, size*2, self.top)):
+            for meta in self.await_pos(self.offset(-int(apeak) - 2, size * 2, self.top)):
                 self.curr = yield meta
             self.curr = yield M_BOX_AFTER_S
-        for meta in self.await_pos(self.offset(-int(apeak)-1, size*2, self.top)):
+        for meta in self.await_pos(self.offset(-int(apeak) - 1, size * 2, self.top)):
             self.curr = yield meta
         self.curr = yield M_BOX_AFTER_S
-        for meta in self.await_pos(self.offset(-int(apeak), size*2, self.top)):
+        for meta in self.await_pos(self.offset(-int(apeak), size * 2, self.top)):
             self.curr = yield meta
         self.curr = yield self.expect("'", meta=M_OCCUPIED | M_BOX_START_E)
         if apeak:
             self.curr = yield self.expect(".", meta=M_OCCUPIED)
             self.curr = yield self.expect("'", meta=M_OCCUPIED)
-        for meta in self.await_pos(self.offset(int(apeak)+1, size*2, self.top)):
+        for meta in self.await_pos(self.offset(int(apeak) + 1, size * 2, self.top)):
             self.curr = yield meta
         self.curr = yield M_BOX_AFTER_E | M_BOX_AFTER_S
         if count > 1:
             try:
-                for meta in self.await_pos(self.offset(int(apeak)+2, size*2, self.top)):
+                for meta in self.await_pos(self.offset(int(apeak) + 2, size * 2, self.top)):
                     self.curr = yield meta
                 self.curr = yield M_BOX_AFTER_S
             except NoSuchPosition:
@@ -1356,11 +1329,11 @@ class DiamondBoxPattern(Pattern):
         try:
             if apeak:
                 for i in range(3):
-                    for meta in self.await_pos(self.offset(-1+i, size*2+1, self.top)):
+                    for meta in self.await_pos(self.offset(-1 + i, size * 2 + 1, self.top)):
                         self.curr = yield meta
                     self.curr = yield M_BOX_AFTER_S
             else:
-                for meta in self.await_pos(self.offset(0, size*2+1, self.top)):
+                for meta in self.await_pos(self.offset(0, size * 2 + 1, self.top)):
                     self.curr = yield meta
                 self.curr = yield M_BOX_AFTER_S
         except NoSuchPosition:
@@ -1370,25 +1343,24 @@ class DiamondBoxPattern(Pattern):
 
     def render(self):
         Pattern.render(self)
-        apeak = (self.width-3) % 4 == 2
-        h = 3+2*((self.width-3-2*int(apeak))//4)
+        apeak = (self.width - 3) % 4 == 2
+        h = 3 + 2 * ((self.width - 3 - 2 * int(apeak)) // 4)
         return [
-            Line(a=(self.top[0]+0.5, self.top[1]+0.5),
-                 b=(self.top[0]+0.5-self.width//2, self.top[1]+0.5+h//2),
+            Line(a=(self.top[0] + 0.5, self.top[1] + 0.5),
+                 b=(self.top[0] + 0.5 - self.width // 2, self.top[1] + 0.5 + h // 2),
                  z=1, stroke=C_FOREGROUND, salpha=1.0, w=1, stype=STROKE_SOLID),
-            Line(a=(self.top[0]+0.5, self.top[1]+0.5),
-                 b=(self.top[0]+0.5+self.width//2, self.top[1]+0.5+h//2),
+            Line(a=(self.top[0] + 0.5, self.top[1] + 0.5),
+                 b=(self.top[0] + 0.5 + self.width // 2, self.top[1] + 0.5 + h // 2),
                  z=1, stroke=C_FOREGROUND, salpha=1.0, w=1, stype=STROKE_SOLID),
-            Line(a=(self.top[0]+0.5-self.width//2, self.top[1]+0.5+h//2),
-                 b=(self.top[0]+0.5, self.top[1]+0.5+h-1),
+            Line(a=(self.top[0] + 0.5 - self.width // 2, self.top[1] + 0.5 + h // 2),
+                 b=(self.top[0] + 0.5, self.top[1] + 0.5 + h - 1),
                  z=1, stroke=C_FOREGROUND, salpha=1.0, w=1, stype=STROKE_SOLID),
-            Line(a=(self.top[0]+0.5+self.width//2, self.top[1]+0.5+h//2),
-                 b=(self.top[0]+0.5, self.top[1]+0.5+h-1),
+            Line(a=(self.top[0] + 0.5 + self.width // 2, self.top[1] + 0.5 + h // 2),
+                 b=(self.top[0] + 0.5, self.top[1] + 0.5 + h - 1),
                  z=1, stroke=C_FOREGROUND, salpha=1.0, w=1, stype=STROKE_SOLID), ]
 
 
 class ConnectorPattern(Pattern):
-
     xdir = 0
     ydir = 0
     pos = None
@@ -1417,14 +1389,14 @@ class ConnectorPattern(Pattern):
 
         self.curr = yield self.expect(self.chars[0])
         for char in self.chars[1:]:
-            for meta in self.await_pos(self.offset(self.xdir-1, self.ydir)):
+            for meta in self.await_pos(self.offset(self.xdir - 1, self.ydir)):
                 self.curr = yield meta
             self.curr = yield self.expect(char)
 
         if self.flipped:
-            self.pos = self.curr.col-1, self.curr.row
+            self.pos = self.curr.col - 1, self.curr.row
         try:
-            for meta in self.await_pos(self.offset(self.xdir-1, self.ydir)):
+            for meta in self.await_pos(self.offset(self.xdir - 1, self.ydir)):
                 self.curr = yield meta
 
             if not self.flipped:
@@ -1444,19 +1416,19 @@ class ConnectorPattern(Pattern):
 
 
 class ArrowheadPattern(ConnectorPattern):
-
     boxrequired = False
 
     def render(self):
         Pattern.render(self)
         flip = 1 if self.flipped else -1
-        centre = (self.pos[0]+0.5, self.pos[1]+0.5)
-        spos = (centre[0]-0.5*self.xdir*flip, centre[1]-0.5*self.ydir*flip)
-        apos2 = (centre[0]+(0.5+0.5*self.tobox)*self.xdir*flip, centre[1]+(0.5+0.5*self.tobox)*self.ydir*flip)
-        apos1 = (apos2[0]-0.8*self.xdir*flip-0.5*self.ydir*flip,
-                 apos2[1]-0.8*self.ydir*flip/CHAR_H_RATIO-0.5*self.xdir*flip/CHAR_H_RATIO)
-        apos3 = (apos2[0]-0.8*self.xdir*flip+0.5*self.ydir*flip,
-                 apos2[1]-0.8*self.ydir*flip/CHAR_H_RATIO+0.5*self.xdir*flip/CHAR_H_RATIO)
+        centre = (self.pos[0] + 0.5, self.pos[1] + 0.5)
+        spos = (centre[0] - 0.5 * self.xdir * flip, centre[1] - 0.5 * self.ydir * flip)
+        apos2 = (centre[0] + (0.5 + 0.5 * self.tobox) * self.xdir * flip,
+                 centre[1] + (0.5 + 0.5 * self.tobox) * self.ydir * flip)
+        apos1 = (apos2[0] - 0.8 * self.xdir * flip - 0.5 * self.ydir * flip,
+                 apos2[1] - 0.8 * self.ydir * flip / CHAR_H_RATIO - 0.5 * self.xdir * flip / CHAR_H_RATIO)
+        apos3 = (apos2[0] - 0.8 * self.xdir * flip + 0.5 * self.ydir * flip,
+                 apos2[1] - 0.8 * self.ydir * flip / CHAR_H_RATIO + 0.5 * self.xdir * flip / CHAR_H_RATIO)
         return [
             Line(a=apos1, b=apos2, z=0, stroke=C_FOREGROUND, salpha=1.0, w=1, stype=STROKE_SOLID),
             Line(a=apos3, b=apos2, z=0, stroke=C_FOREGROUND, salpha=1.0, w=1, stype=STROKE_SOLID),
@@ -1465,7 +1437,6 @@ class ArrowheadPattern(ConnectorPattern):
 
 
 class LArrowheadPattern(ArrowheadPattern):
-
     xdir = 1
     ydir = 0
     chars = ["<"]
@@ -1476,7 +1447,6 @@ class LArrowheadPattern(ArrowheadPattern):
 
 
 class RArrowheadPattern(ArrowheadPattern):
-
     xdir = 1
     ydir = 0
     chars = [">"]
@@ -1487,7 +1457,6 @@ class RArrowheadPattern(ArrowheadPattern):
 
 
 class DArrowheadPattern(ArrowheadPattern):
-
     xdir = 0
     ydir = 1
     chars = ["Vv"]
@@ -1499,7 +1468,6 @@ class DArrowheadPattern(ArrowheadPattern):
 
 
 class UArrowheadPattern(ArrowheadPattern):
-
     xdir = 0
     ydir = 1
     chars = ["^"]
@@ -1510,21 +1478,20 @@ class UArrowheadPattern(ArrowheadPattern):
 
 
 class CrowsFeetPattern(ConnectorPattern):
-
     boxrequired = True
 
     def render(self):
         Pattern.render(self)
 
         flip = 1 if self.flipped else -1
-        centre = (self.pos[0]+0.5, self.pos[1]+0.5)
-        spos = (centre[0]-self.xdir*0.5*flip, centre[1]-self.ydir*0.5*flip)
-        fpos1 = (centre[0]+self.xdir*1.0*flip - 0.6*(not self.xdir),
-                 centre[1]+self.ydir*1.0*flip - 0.6*(not self.ydir)/CHAR_H_RATIO)
-        fpos2 = (centre[0]+self.xdir*1.0*flip, centre[1]+self.ydir*1.0*flip)
-        fpos3 = (centre[0]+self.xdir*1.0*flip + 0.6*(not self.xdir),
-                 centre[1]+self.ydir*1.0*flip + 0.6*(not self.ydir)/CHAR_H_RATIO)
-        fpos0 = (fpos2[0]-self.xdir*1.0*flip, fpos2[1]-self.ydir*1.0*flip/CHAR_H_RATIO)
+        centre = (self.pos[0] + 0.5, self.pos[1] + 0.5)
+        spos = (centre[0] - self.xdir * 0.5 * flip, centre[1] - self.ydir * 0.5 * flip)
+        fpos1 = (centre[0] + self.xdir * 1.0 * flip - 0.6 * (not self.xdir),
+                 centre[1] + self.ydir * 1.0 * flip - 0.6 * (not self.ydir) / CHAR_H_RATIO)
+        fpos2 = (centre[0] + self.xdir * 1.0 * flip, centre[1] + self.ydir * 1.0 * flip)
+        fpos3 = (centre[0] + self.xdir * 1.0 * flip + 0.6 * (not self.xdir),
+                 centre[1] + self.ydir * 1.0 * flip + 0.6 * (not self.ydir) / CHAR_H_RATIO)
+        fpos0 = (fpos2[0] - self.xdir * 1.0 * flip, fpos2[1] - self.ydir * 1.0 * flip / CHAR_H_RATIO)
         return [
             Line(a=fpos0, b=fpos1, z=0, stroke=C_FOREGROUND, salpha=1.0, w=1, stype=STROKE_SOLID),
             Line(a=fpos0, b=fpos2, z=0, stroke=C_FOREGROUND, salpha=1.0, w=1, stype=STROKE_SOLID),
@@ -1534,7 +1501,6 @@ class CrowsFeetPattern(ConnectorPattern):
 
 
 class LCrowsFeetPattern(CrowsFeetPattern):
-
     xdir = 1
     ydir = 0
     chars = [">"]
@@ -1545,7 +1511,6 @@ class LCrowsFeetPattern(CrowsFeetPattern):
 
 
 class RCrowsFeetPattern(CrowsFeetPattern):
-
     xdir = 1
     ydir = 0
     chars = ["<"]
@@ -1556,7 +1521,6 @@ class RCrowsFeetPattern(CrowsFeetPattern):
 
 
 class UCrowsFeetPattern(CrowsFeetPattern):
-
     xdir = 0
     ydir = 1
     chars = ["Vv"]
@@ -1567,7 +1531,6 @@ class UCrowsFeetPattern(CrowsFeetPattern):
 
 
 class DCrowsFeetPattern(CrowsFeetPattern):
-
     xdir = 0
     ydir = 1
     chars = ["^"]
@@ -1578,7 +1541,6 @@ class DCrowsFeetPattern(CrowsFeetPattern):
 
 
 class UOutlineArrowheadPattern(Pattern):
-
     pos = None
     tobox = False
     dashed = False
@@ -1602,23 +1564,22 @@ class UOutlineArrowheadPattern(Pattern):
     def render(self):
         Pattern.render(self)
         return [
-            Line(a=(self.pos[0]+0.5, self.pos[1]-0.5*self.tobox),
-                 b=(self.pos[0], self.pos[1]+0.8/CHAR_H_RATIO-0.5*self.tobox),
+            Line(a=(self.pos[0] + 0.5, self.pos[1] - 0.5 * self.tobox),
+                 b=(self.pos[0], self.pos[1] + 0.8 / CHAR_H_RATIO - 0.5 * self.tobox),
                  z=1, stroke=C_FOREGROUND, salpha=1.0, w=1, stype=STROKE_SOLID),
-            Line(a=(self.pos[0]+0.5, self.pos[1]-0.5*self.tobox),
-                 b=(self.pos[0]+1.0, self.pos[1]+0.8/CHAR_H_RATIO-0.5*self.tobox),
+            Line(a=(self.pos[0] + 0.5, self.pos[1] - 0.5 * self.tobox),
+                 b=(self.pos[0] + 1.0, self.pos[1] + 0.8 / CHAR_H_RATIO - 0.5 * self.tobox),
                  z=1, stroke=C_FOREGROUND, salpha=1.0, w=1, stype=STROKE_SOLID),
-            Line(a=(self.pos[0], self.pos[1]+0.8/CHAR_H_RATIO-0.5*self.tobox),
-                 b=(self.pos[0]+1.0, self.pos[1]+0.8/CHAR_H_RATIO-0.5*self.tobox),
+            Line(a=(self.pos[0], self.pos[1] + 0.8 / CHAR_H_RATIO - 0.5 * self.tobox),
+                 b=(self.pos[0] + 1.0, self.pos[1] + 0.8 / CHAR_H_RATIO - 0.5 * self.tobox),
                  z=1, stroke=C_FOREGROUND, salpha=1.0, w=1, stype=STROKE_SOLID),
-            Line(a=(self.pos[0]+0.5, self.pos[1]+0.8/CHAR_H_RATIO-0.5*self.tobox),
-                 b=(self.pos[0]+0.5, self.pos[1]+1.0),
+            Line(a=(self.pos[0] + 0.5, self.pos[1] + 0.8 / CHAR_H_RATIO - 0.5 * self.tobox),
+                 b=(self.pos[0] + 0.5, self.pos[1] + 1.0),
                  z=1, stroke=C_FOREGROUND, salpha=1.0, w=1,
                  stype=STROKE_DASHED if self.dashed else STROKE_SOLID), ]
 
 
 class DOutlineArrowheadPattern(Pattern):
-
     pos = None
     tobox = False
     dashed = False
@@ -1652,23 +1613,22 @@ class DOutlineArrowheadPattern(Pattern):
     def render(self):
         Pattern.render(self)
         return [
-            Line(a=(self.pos[0]+0.5, self.pos[1]+1+0.5*self.tobox),
-                 b=(self.pos[0], self.pos[1]+1-0.8/CHAR_H_RATIO+0.5*self.tobox),
+            Line(a=(self.pos[0] + 0.5, self.pos[1] + 1 + 0.5 * self.tobox),
+                 b=(self.pos[0], self.pos[1] + 1 - 0.8 / CHAR_H_RATIO + 0.5 * self.tobox),
                  z=1, stroke=C_FOREGROUND, salpha=1.0, w=1, stype=STROKE_SOLID),
-            Line(a=(self.pos[0]+0.5, self.pos[1]+1+0.5*self.tobox),
-                 b=(self.pos[0]+1.0, self.pos[1]+1-0.8/CHAR_H_RATIO+0.5*self.tobox),
+            Line(a=(self.pos[0] + 0.5, self.pos[1] + 1 + 0.5 * self.tobox),
+                 b=(self.pos[0] + 1.0, self.pos[1] + 1 - 0.8 / CHAR_H_RATIO + 0.5 * self.tobox),
                  z=1, stroke=C_FOREGROUND, salpha=1.0, w=1, stype=STROKE_SOLID),
-            Line(a=(self.pos[0], self.pos[1]+1-0.8/CHAR_H_RATIO+0.5*self.tobox),
-                 b=(self.pos[0]+1.0, self.pos[1]+1-0.8/CHAR_H_RATIO+0.5*self.tobox),
+            Line(a=(self.pos[0], self.pos[1] + 1 - 0.8 / CHAR_H_RATIO + 0.5 * self.tobox),
+                 b=(self.pos[0] + 1.0, self.pos[1] + 1 - 0.8 / CHAR_H_RATIO + 0.5 * self.tobox),
                  z=1, stroke=C_FOREGROUND, salpha=1.0, w=1, stype=STROKE_SOLID),
-            Line(a=(self.pos[0]+0.5, self.pos[1]+1-0.8/CHAR_H_RATIO+0.5*self.tobox),
-                 b=(self.pos[0]+0.5, self.pos[1]),
+            Line(a=(self.pos[0] + 0.5, self.pos[1] + 1 - 0.8 / CHAR_H_RATIO + 0.5 * self.tobox),
+                 b=(self.pos[0] + 0.5, self.pos[1]),
                  z=1, stroke=C_FOREGROUND, salpha=1.0, w=1,
                  stype=STROKE_DASHED if self.dashed else STROKE_SOLID), ]
 
 
 class HorizOutlineArrowheadPattern(ConnectorPattern):
-
     boxrequired = False
 
     def render(self):
@@ -1676,31 +1636,34 @@ class HorizOutlineArrowheadPattern(ConnectorPattern):
         xd = self.xdir * (1 if self.flipped else -1)
         yd = self.ydir * (1 if self.flipped else -1)
         return [
-            Line(a=(self.pos[0]+0.5+0.5*xd+0.5*xd*self.tobox,
-                    self.pos[1]+0.5+0.5*yd+0.5*yd*self.tobox),
-                 b=(self.pos[0]+0.5+0.5*xd-0.8*xd-0.5*yd+0.5*xd*self.tobox,
-                    self.pos[1]+0.5+0.5*yd-0.8*yd/CHAR_H_RATIO-0.5*xd/CHAR_H_RATIO+0.5*yd*self.tobox),
+            Line(a=(self.pos[0] + 0.5 + 0.5 * xd + 0.5 * xd * self.tobox,
+                    self.pos[1] + 0.5 + 0.5 * yd + 0.5 * yd * self.tobox),
+                 b=(self.pos[0] + 0.5 + 0.5 * xd - 0.8 * xd - 0.5 * yd + 0.5 * xd * self.tobox,
+                    self.pos[
+                        1] + 0.5 + 0.5 * yd - 0.8 * yd / CHAR_H_RATIO - 0.5 * xd / CHAR_H_RATIO + 0.5 * yd * self.tobox),
                  z=1, stroke=C_FOREGROUND, salpha=1.0, w=1, stype=STROKE_SOLID),
-            Line(a=(self.pos[0]+0.5+0.5*xd+0.5*xd*self.tobox,
-                    self.pos[1]+0.5+0.5*yd+0.5*yd*self.tobox),
-                 b=(self.pos[0]+0.5+0.5*xd-0.8*xd+0.5*yd+0.5*xd*self.tobox,
-                    self.pos[1]+0.5+0.5*yd-0.8*yd/CHAR_H_RATIO+0.5*xd/CHAR_H_RATIO+0.5*yd*self.tobox),
+            Line(a=(self.pos[0] + 0.5 + 0.5 * xd + 0.5 * xd * self.tobox,
+                    self.pos[1] + 0.5 + 0.5 * yd + 0.5 * yd * self.tobox),
+                 b=(self.pos[0] + 0.5 + 0.5 * xd - 0.8 * xd + 0.5 * yd + 0.5 * xd * self.tobox,
+                    self.pos[
+                        1] + 0.5 + 0.5 * yd - 0.8 * yd / CHAR_H_RATIO + 0.5 * xd / CHAR_H_RATIO + 0.5 * yd * self.tobox),
                  z=1, stroke=C_FOREGROUND, salpha=1.0, w=1, stype=STROKE_SOLID),
-            Line(a=(self.pos[0]+0.5+0.5*xd-0.8*xd-0.5*yd+0.5*xd*self.tobox,
-                    self.pos[1]+0.5+0.5*yd-0.8*yd/CHAR_H_RATIO-0.5*xd/CHAR_H_RATIO+0.5*yd*self.tobox),
-                 b=(self.pos[0]+0.5+0.5*xd-0.8*xd+0.5*yd+0.5*xd*self.tobox,
-                    self.pos[1]+0.5+0.5*yd-0.8*yd/CHAR_H_RATIO+0.5*xd/CHAR_H_RATIO+0.5*yd*self.tobox),
+            Line(a=(self.pos[0] + 0.5 + 0.5 * xd - 0.8 * xd - 0.5 * yd + 0.5 * xd * self.tobox,
+                    self.pos[
+                        1] + 0.5 + 0.5 * yd - 0.8 * yd / CHAR_H_RATIO - 0.5 * xd / CHAR_H_RATIO + 0.5 * yd * self.tobox),
+                 b=(self.pos[0] + 0.5 + 0.5 * xd - 0.8 * xd + 0.5 * yd + 0.5 * xd * self.tobox,
+                    self.pos[
+                        1] + 0.5 + 0.5 * yd - 0.8 * yd / CHAR_H_RATIO + 0.5 * xd / CHAR_H_RATIO + 0.5 * yd * self.tobox),
                  z=1, stroke=C_FOREGROUND, salpha=1.0, w=1, stype=STROKE_SOLID),
-            Line(a=(self.pos[0]+0.5+0.5*xd-0.8*xd+0.5*xd*self.tobox,
-                    self.pos[1]+0.5+0.5*yd-0.8*yd/CHAR_H_RATIO+0.5*yd*self.tobox),
-                 b=(self.pos[0]+0.5-1.5*xd,
-                    self.pos[1]+0.5-1.5*yd),
+            Line(a=(self.pos[0] + 0.5 + 0.5 * xd - 0.8 * xd + 0.5 * xd * self.tobox,
+                    self.pos[1] + 0.5 + 0.5 * yd - 0.8 * yd / CHAR_H_RATIO + 0.5 * yd * self.tobox),
+                 b=(self.pos[0] + 0.5 - 1.5 * xd,
+                    self.pos[1] + 0.5 - 1.5 * yd),
                  z=1, stroke=C_FOREGROUND, salpha=1.0, w=1,
                  stype=STROKE_DASHED if self.dashed else STROKE_SOLID), ]
 
 
 class LOutlineArrowheadPattern(HorizOutlineArrowheadPattern):
-
     chars = ["<", "|"]
     xdir = 1
     ydir = 0
@@ -1711,7 +1674,6 @@ class LOutlineArrowheadPattern(HorizOutlineArrowheadPattern):
 
 
 class ROutlineArrowheadPattern(HorizOutlineArrowheadPattern):
-
     chars = ["|", ">"]
     xdir = 1
     ydir = 0
@@ -1722,7 +1684,6 @@ class ROutlineArrowheadPattern(HorizOutlineArrowheadPattern):
 
 
 class DiamondConnectorPattern(ConnectorPattern):
-
     filled = False
     boxrequired = True
 
@@ -1732,22 +1693,22 @@ class DiamondConnectorPattern(ConnectorPattern):
         yd = self.ydir * (1 if self.flipped else -1)
         return [
             Polygon(points=(
-                    (self.pos[0]+0.5+1.0*xd, self.pos[1]+0.5+1.0*yd),
-                    (self.pos[0]+0.5+1.0*xd-1.0*xd-0.5*yd,
-                     self.pos[1]+0.5+1.0*yd-1.0*yd/CHAR_H_RATIO-0.5*xd/CHAR_H_RATIO),
-                    (self.pos[0]+0.5+1.0*xd-2.0*xd, self.pos[1]+0.5+1.0*yd-2.0*yd/CHAR_H_RATIO),
-                    (self.pos[0]+0.5+1.0*xd-1.0*xd+0.5*yd,
-                     self.pos[1]+0.5+1.0*yd-1.0*yd/CHAR_H_RATIO+0.5*xd/CHAR_H_RATIO), ),
-                    z=1, stroke=None if self.filled else C_FOREGROUND, salpha=1.0, w=1,
-                    stype=STROKE_SOLID, fill=C_FOREGROUND if self.filled else None, falpha=1.0),
-            Line(a=(self.pos[0]+0.5+1.0*xd-2.0*xd, self.pos[1]+0.5+1.0*yd-2.0*yd/CHAR_H_RATIO),
-                 b=(self.pos[0]+0.5+1.0*xd-0.5*xd-len(self.chars)*xd, self.pos[1]+0.5+1.0*yd-0.5*yd-len(self.chars)*yd),
+                (self.pos[0] + 0.5 + 1.0 * xd, self.pos[1] + 0.5 + 1.0 * yd),
+                (self.pos[0] + 0.5 + 1.0 * xd - 1.0 * xd - 0.5 * yd,
+                 self.pos[1] + 0.5 + 1.0 * yd - 1.0 * yd / CHAR_H_RATIO - 0.5 * xd / CHAR_H_RATIO),
+                (self.pos[0] + 0.5 + 1.0 * xd - 2.0 * xd, self.pos[1] + 0.5 + 1.0 * yd - 2.0 * yd / CHAR_H_RATIO),
+                (self.pos[0] + 0.5 + 1.0 * xd - 1.0 * xd + 0.5 * yd,
+                 self.pos[1] + 0.5 + 1.0 * yd - 1.0 * yd / CHAR_H_RATIO + 0.5 * xd / CHAR_H_RATIO),),
+                z=1, stroke=None if self.filled else C_FOREGROUND, salpha=1.0, w=1,
+                stype=STROKE_SOLID, fill=C_FOREGROUND if self.filled else None, falpha=1.0),
+            Line(a=(self.pos[0] + 0.5 + 1.0 * xd - 2.0 * xd, self.pos[1] + 0.5 + 1.0 * yd - 2.0 * yd / CHAR_H_RATIO),
+                 b=(self.pos[0] + 0.5 + 1.0 * xd - 0.5 * xd - len(self.chars) * xd,
+                    self.pos[1] + 0.5 + 1.0 * yd - 0.5 * yd - len(self.chars) * yd),
                  z=1, stroke=C_FOREGROUND, salpha=1.0, w=1,
                  stype=STROKE_DASHED if self.dashed else STROKE_SOLID)]
 
 
 class UOutlineDiamondConnectorPattern(DiamondConnectorPattern):
-
     chars = ["^", "vV"]
     xdir = 0
     ydir = 1
@@ -1759,7 +1720,6 @@ class UOutlineDiamondConnectorPattern(DiamondConnectorPattern):
 
 
 class DOutlineDiamondConnectorPattern(DiamondConnectorPattern):
-
     chars = ["^", "vV"]
     xdir = 0
     ydir = 1
@@ -1771,7 +1731,6 @@ class DOutlineDiamondConnectorPattern(DiamondConnectorPattern):
 
 
 class LOutlineDiamondConnectorPattern(DiamondConnectorPattern):
-
     chars = ["<", ">"]
     xdir = 1
     ydir = 0
@@ -1783,7 +1742,6 @@ class LOutlineDiamondConnectorPattern(DiamondConnectorPattern):
 
 
 class ROutlineDiamondConnectorPattern(DiamondConnectorPattern):
-
     chars = ["<", ">"]
     xdir = 1
     ydir = 0
@@ -1795,7 +1753,6 @@ class ROutlineDiamondConnectorPattern(DiamondConnectorPattern):
 
 
 class UDiamondConnectorPattern(DiamondConnectorPattern):
-
     chars = ["^", "#", "vV"]
     xdir = 0
     ydir = 1
@@ -1807,7 +1764,6 @@ class UDiamondConnectorPattern(DiamondConnectorPattern):
 
 
 class DDiamondConnectorPattern(DiamondConnectorPattern):
-
     chars = ["^", "#", "vV"]
     xdir = 0
     ydir = 1
@@ -1819,7 +1775,6 @@ class DDiamondConnectorPattern(DiamondConnectorPattern):
 
 
 class LDiamondConnectorPattern(DiamondConnectorPattern):
-
     chars = ["<", "#", ">"]
     xdir = 1
     ydir = 0
@@ -1831,7 +1786,6 @@ class LDiamondConnectorPattern(DiamondConnectorPattern):
 
 
 class RDiamondConnectorPattern(DiamondConnectorPattern):
-
     chars = ["<", "#", ">"]
     xdir = 1
     ydir = 0
