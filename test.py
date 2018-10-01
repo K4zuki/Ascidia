@@ -30,5 +30,5 @@ from tests.boxtests import *
 from tests.linetests import *
 from tests.connectortests import *
 from tests.icontests import *
-			
+
 unittest.main()
