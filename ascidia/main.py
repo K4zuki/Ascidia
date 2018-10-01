@@ -280,6 +280,10 @@ class SvgOutput(object):
         root = self.doc.documentElement
         root.setAttribute("xmlns", "http://www.w3.org/2000/svg")
         root.setAttribute("version", "1.1")
+        root.setAttribute("width", self._x(self.diagram.size[0]))
+        root.setAttribute("height", self._y(self.diagram.size[1]))
+        root.setAttribute("viewbox",
+                          "{} {} {} {}".format(0, 0, self._x(self.diagram.size[0]), self._y(self.diagram.size[1])))
         self._do_Rectangle(core.Rectangle(a=(0, 0), b=self.diagram.size, z=0, stroke=None, salpha=1,
                                           w=0, stype=core.STROKE_SOLID, fill=self.prefs.bgcolour, falpha=1), root)
         for item in sorted(self.diagram.content, key=lambda i: i.z):
