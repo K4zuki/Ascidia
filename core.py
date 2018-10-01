@@ -1,4 +1,4 @@
-"""    
+"""
 Copyright (c) 2012 Mark Frimston
 
 Permission is hereby granted, free of charge, to any person
@@ -23,13 +23,12 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 
 ----------------------------------------------------
-    
+
 Main import stuff
 """
 
-#import mrf.ascii
+# import mrf.ascii
 from collections import namedtuple
-
 
 CHAR_H_RATIO = 2.0
 
@@ -113,8 +112,8 @@ class Pattern(object):
     def __init__(self):
         self.curr = None
         self.gen = self.matcher()
-        self.gen.next()
-        #self.debug_canvas = mrf.ascii.Canvas()
+        self.gen.__next__()
+        # self.debug_canvas = mrf.ascii.Canvas()
 
     def matcher(self):
         yield
@@ -135,11 +134,11 @@ class Pattern(object):
     def offset(self, x, y, pos=None):
         if pos is None:
             pos = (self.curr.col, self.curr.row)
-        return (pos[0]+x, pos[1]+y)
+        return (pos[0] + x, pos[1] + y)
 
     def await_pos(self, pos):
         while (self.curr.col, self.curr.row) != pos:
-            if(self.curr.row > pos[1]
+            if (self.curr.row > pos[1]
                     or (self.curr.row == pos[1] and self.curr.col > pos[0])
                     or self.curr.char == END_OF_INPUT):
                 raise NoSuchPosition(pos)
