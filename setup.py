@@ -8,9 +8,9 @@ setup(
     name="ascidia",
     packages=find_packages(exclude=["contrib", "docs", "tests"]),
     version=VERSION,  # Ideally should be same as your GitHub release tag varsion
-    description="Yet another pandoc filters for blockdiag",
-    author="Mark Frimston",
-    author_email="Frimkron@github.com",
+    description="A command-line utility for rendering technical diagrams from ASCII art",
+    author="Mark Frimston; Kazuki Yamamoto",
+    author_email="Frimkron@github.com; k.yamamoto.08136891@gmail.com",
     url="https://github.com/K4zuki/Ascidia",
     license="MIT",
     install_requires=requires,
@@ -25,7 +25,7 @@ setup(
     # pip to create the appropriate form of executable for the target platform.
     entry_points={
         "console_scripts": [
-            "ascidia= ascidia.ascidia:main",
+            "ascidia=ascidia.ascidia:main",
         ],
     },
 )
