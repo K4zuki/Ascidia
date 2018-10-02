@@ -394,6 +394,7 @@ class SvgOutput(object):
     def _style_attrs(self, item, el):
         if hasattr(item, "stroke"):
             el.setAttribute("stroke", self._colour(item.stroke))
+            el.setAttribute("stroke-linecap", "round")
         if hasattr(item, "w"):
             el.setAttribute("stroke-width", self._w(item.w))
         if hasattr(item, "stype"):
